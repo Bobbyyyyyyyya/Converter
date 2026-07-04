@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Converter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="bg-gradient"></div>
+
+    <header class="header">
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
+          <path d="M10 22V10l6 6-6 6zM16 22V10l6 6-6 6z" fill="white" opacity="0.9"/>
+          <defs>
+            <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
+              <stop stop-color="#6366f1"/>
+              <stop offset="1" stop-color="#a855f7"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <h1>Converter</h1>
+      </div>
+      <p class="subtitle">Convert images, audio & video in seconds</p>
+    </header>
+
+    <main class="main">
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-zone-content">
+          <div class="drop-icon-wrap">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+              <path d="M24 32V16m0 0l-6 6m6-6l6 6" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+            </svg>
+          </div>
+          <p class="drop-text">Drop files here</p>
+          <p class="drop-hint">or click to browse</p>
+          <div class="drop-types">
+            <span>Image</span>
+            <span>Audio</span>
+            <span>Video</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card controls" id="controls" style="display:none">
+        <div class="card-header">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Conversion settings</span>
+        </div>
+
+        <div class="control-grid">
+          <div class="control-group">
+            <label>Convert to</label>
+            <div class="select-wrap">
+              <select id="targetFormat"></select>
+              <svg class="select-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 5l3 3 3-3" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="control-group">
+            <label>Output folder</label>
+            <div class="input-row">
+              <input type="text" id="outputDir" readonly placeholder="Choose output folder..." />
+              <button id="selectOutputDir" class="btn btn-ghost">Browse</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="file-section">
+          <div class="file-section-header">
+            <span>Files (<span id="fileCount">0</span>)</span>
+            <button id="clearFiles" class="btn btn-text">Clear all</button>
+          </div>
+          <ul class="file-list" id="fileList"></ul>
+        </div>
+
+        <button id="convertBtn" class="btn btn-primary" disabled>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 3v12M3 9h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Convert
+        </button>
+      </div>
+
+      <div class="card progress-container" id="progressContainer" style="display:none">
+        <div class="progress-header">
+          <div class="progress-spinner"></div>
+          <span id="progressText">Converting...</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <div class="card results" id="results" style="display:none">
+        <div class="card-header">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M7 10l2 2 4-4" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="10" cy="10" r="8" stroke="#22c55e" stroke-width="1.5" opacity="0.3"/>
+          </svg>
+          <span>Results</span>
+        </div>
+        <ul class="results-list" id="resultsList"></ul>
+        <div class="results-summary" id="resultsSummary"></div>
+        <button id="newConversion" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          New conversion
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

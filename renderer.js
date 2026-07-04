@@ -1,0 +1,230 @@
+const dropZone = document.getElementById('dropZone');
+const controls = document.getElementById('controls');
+const fileList = document.getElementById('fileList');
+const fileCount = document.getElementById('fileCount');
+const targetFormat = document.getElementById('targetFormat');
+const outputDir = document.getElementById('outputDir');
+const selectOutputDirBtn = document.getElementById('selectOutputDir');
+const convertBtn = document.getElementById('convertBtn');
+const clearFilesBtn = document.getElementById('clearFiles');
+const progressContainer = document.getElementById('progressContainer');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const results = document.getElementById('results');
+const resultsList = document.getElementById('resultsList');
+const resultsSummary = document.getElementById('resultsSummary');
+const newConversionBtn = document.getElementById('newConversion');
+
+let selectedFiles = [];
+let currentOutputDir = '';
+
+dropZone.addEventListener('click', async () => {
+  const files = await window.converter.selectFiles();
+  if (files.length) addFiles(files);
+});
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('drag-over');
+});
+
+dropZone.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const paths = Array.from(e.dataTransfer.files).map((f) => f.path);
+  if (paths.length) addFiles(paths);
+});
+
+dropZone.addEventListener('mousemove', (e) => {
+  const rect = dropZone.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  dropZone.style.setProperty('--mouse-x', x + '%');
+  dropZone.style.setProperty('--mouse-y', y + '%');
+});
+
+async function addFiles(paths) {
+  const newFiles = [];
+  for (const p of paths) {
+    const info = await window.converter.getFormatInfo(p);
+    if (info.type !== 'unknown') {
+      newFiles.push({ path: p, ...info });
+    }
+  }
+
+  if (newFiles.length === 0) {
+    alert('No supported files found.');
+    return;
+  }
+
+  selectedFiles = [...selectedFiles, ...newFiles];
+  controls.style.display = 'block';
+  dropZone.style.display = 'none';
+  renderFileList();
+  updateTargetFormatOptions();
+  updateConvertButton();
+}
+
+function renderFileList() {
+  fileList.innerHTML = '';
+  fileCount.textContent = selectedFiles.length;
+
+  selectedFiles.forEach((f, i) => {
+    const li = document.createElement('li');
+    const typeClass = getFileTypeClass(f.type);
+    li.innerHTML = `
+      <span class="file-icon ${typeClass}">${getFileEmoji(f.type)}</span>
+      <span class="file-name">${f.path.split('/').pop()}</span>
+      <span class="file-ext">${f.ext}</span>
+      <button class="file-remove" data-index="${i}">×</button>
+    `;
+    li.querySelector('.file-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedFiles.splice(i, 1);
+      renderFileList();
+      updateTargetFormatOptions();
+      updateConvertButton();
+      if (selectedFiles.length === 0) resetUI();
+    });
+    fileList.appendChild(li);
+  });
+}
+
+function getFileEmoji(type) {
+  switch (type) {
+    case 'image': return '🖼';
+    case 'audio': return '🎵';
+    case 'video': return '🎬';
+    default: return '📄';
+  }
+}
+
+function getFileTypeClass(type) {
+  switch (type) {
+    case 'image': return 'image';
+    case 'audio': return 'audio';
+    case 'video': return 'video';
+    default: return '';
+  }
+}
+
+function updateTargetFormatOptions() {
+  targetFormat.innerHTML = '';
+  if (selectedFiles.length === 0) return;
+
+  const commonTypes = new Set(selectedFiles.map((f) => f.type));
+  const commonTargets = commonTypes.size === 1
+    ? getTargetsForType(selectedFiles[0].type)
+    : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'avi', 'mov', 'mkv', 'webm'];
+
+  const seen = new Set();
+  for (const fmt of commonTargets) {
+    if (!seen.has(fmt)) {
+      seen.add(fmt);
+      const opt = document.createElement('option');
+      opt.value = fmt;
+      opt.textContent = fmt.toUpperCase();
+      targetFormat.appendChild(opt);
+    }
+  }
+}
+
+function getTargetsForType(type) {
+  switch (type) {
+    case 'image': return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif'];
+    case 'audio': return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'];
+    case 'video': return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif'];
+    default: return [];
+  }
+}
+
+function updateConvertButton() {
+  convertBtn.disabled = selectedFiles.length === 0 || !currentOutputDir;
+}
+
+selectOutputDirBtn.addEventListener('click', async () => {
+  const dir = await window.converter.selectOutputDir();
+  if (dir) {
+    currentOutputDir = dir;
+    outputDir.value = dir;
+    updateConvertButton();
+  }
+});
+
+clearFilesBtn.addEventListener('click', () => {
+  selectedFiles = [];
+  resetUI();
+});
+
+function resetUI() {
+  controls.style.display = 'none';
+  dropZone.style.display = 'block';
+  progressContainer.style.display = 'none';
+  results.style.display = 'none';
+  currentOutputDir = '';
+  outputDir.value = '';
+  convertBtn.disabled = true;
+}
+
+convertBtn.addEventListener('click', async () => {
+  const format = targetFormat.value;
+  if (!format || !currentOutputDir) return;
+
+  convertBtn.disabled = true;
+  progressContainer.style.display = 'block';
+  progressFill.style.width = '0%';
+  progressText.textContent = 'Converting...';
+  results.style.display = 'none';
+
+  const files = selectedFiles.map((f) => f.path);
+
+  window.converter.onProgress(({ file, progress }) => {
+    progressFill.style.width = progress + '%';
+    const name = file.split('/').pop();
+    progressText.textContent = `Converting ${name}... ${progress}%`;
+  });
+
+  const convertResults = await window.converter.convert({
+    files,
+    targetFormat: format,
+    outputDir: currentOutputDir,
+  });
+
+  progressFill.style.width = '100%';
+  progressText.textContent = 'Conversion complete!';
+
+  showResults(convertResults);
+});
+
+function showResults(convertResults) {
+  results.style.display = 'block';
+  resultsList.innerHTML = '';
+
+  let successCount = 0;
+  for (const r of convertResults) {
+    const li = document.createElement('li');
+    const name = r.file.split('/').pop();
+    if (r.success) {
+      successCount++;
+      li.innerHTML = `
+        <span class="success">✓</span>
+        ${name}
+        <span class="file-path">→ ${r.outputPath.split('/').pop()}</span>
+      `;
+    } else {
+      li.innerHTML = `
+        <span class="error">✗</span>
+        ${name}: ${r.error}
+      `;
+    }
+    resultsList.appendChild(li);
+  }
+
+  resultsSummary.textContent = `${successCount} / ${convertResults.length} files converted successfully`;
+}
+
+newConversionBtn.addEventListener('click', resetUI);
