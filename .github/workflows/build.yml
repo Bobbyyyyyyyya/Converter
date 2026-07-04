@@ -59,5 +59,10 @@ jobs:
         run: >
           npx electron-builder
           --${{ contains(matrix.target, 'mac') && 'mac' || contains(matrix.target, 'win') && 'win' || 'linux' }}
-          --publish always
+          --publish ${{ runner.os == 'Windows' && 'never' || 'always' }}
           --config.extraMetadata.main=main.js
+
+      - name: Upload Windows artifacts
+        if: runner.os == 'Windows'
+        working-directory: dist
+        run: gh release upload "${{ github.ref_name }}" converter-*-win-x64.exe converter-*-win-x64.exe.blockmap --clobber

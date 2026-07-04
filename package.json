@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "Convert images, audio & video between formats",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
