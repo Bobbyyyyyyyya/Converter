@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Convert images, audio & video between formats",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
@@ -32,6 +32,9 @@
       "scripts/**/*",
       "build-assets/**/*",
       "node_modules/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/@ffmpeg-installer/**"
     ],
     "afterPack": "scripts/afterPack.js",
     "mac": {

@@ -1,9 +1,28 @@
 const path = require('path');
+const fs = require('fs');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
 
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const ffmpegPath = process.env.FFMPEG_PATH || findSystemFfmpeg() || require('@ffmpeg-installer/ffmpeg').path;
 ffmpeg.setFfmpegPath(ffmpegPath);
+
+function findSystemFfmpeg() {
+  const candidates = [
+    '/opt/homebrew/bin/ffmpeg',
+    '/usr/local/bin/ffmpeg',
+    '/usr/bin/ffmpeg',
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.statSync(p).isFile()) return p;
+    } catch {}
+  }
+  try {
+    const out = require('child_process').execSync('which ffmpeg', { encoding: 'utf8' }).trim();
+    if (out) return out;
+  } catch {}
+  return null;
+}
 
 const SUPPORTED = {
   image: [
