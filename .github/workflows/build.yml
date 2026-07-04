@@ -26,9 +26,6 @@ jobs:
           - os: macos-latest
             arch: arm64
             target: mac-arm64
-          - os: macos-13
-            arch: x64
-            target: mac-x64
           - os: windows-latest
             arch: x64
             target: win-x64
@@ -39,9 +36,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -72,7 +69,7 @@ jobs:
           --config.extraMetadata.main=main.js
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: converter-${{ matrix.target }}
           path: dist/*
@@ -83,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: converter-*
           merge-multiple: true
