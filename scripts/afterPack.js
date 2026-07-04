@@ -16,6 +16,29 @@ exports.default = async function (context) {
   console.log(`\n=== macOS ad-hoc signing: ${appPath} ===`);
 
   const { signAsync } = require('@electron/osx-sign');
+  const { execSync } = require('child_process');
+
+  try {
+    execSync(`xattr -cr "${appPath}"`, { stdio: 'inherit' });
+    console.log('Extended attributes cleared');
+  } catch (_) {}
+
+  const binaries = [
+    'Contents/Resources/app/node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg',
+    'Contents/Resources/app/node_modules/@ffmpeg-installer/darwin-x64/ffmpeg',
+  ];
+
+  for (const rel of binaries) {
+    const p = path.join(appPath, rel);
+    if (fs.existsSync(p)) {
+      try {
+        execSync(`codesign --force --sign - "${p}"`, { stdio: 'inherit' });
+        console.log(`Signed native binary: ${rel}`);
+      } catch (e) {
+        console.error(`Failed to sign ${rel}: ${e.message}`);
+      }
+    }
+  }
 
   try {
     await signAsync({
@@ -29,10 +52,9 @@ exports.default = async function (context) {
     console.error('@electron/osx-sign failed:', e.message);
   }
 
-  const { execSync } = require('child_process');
   try {
     execSync(`xattr -cr "${appPath}"`, { stdio: 'inherit' });
-    console.log('Extended attributes cleared');
+    console.log('Extended attributes cleared (after signing)');
   } catch (_) {}
 
   try {
