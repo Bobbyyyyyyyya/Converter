@@ -28,6 +28,7 @@
       "index.html",
       "styles.css",
       "renderer.js",
+      "build-assets/**/*",
       "node_modules/**/*"
     ],
     "mac": {
@@ -36,7 +37,7 @@
         { "target": "zip", "arch": ["x64", "arm64"] }
       ],
       "category": "public.app-category.utilities",
-      "icon": null,
+      "icon": "build-assets/icon.png",
       "artifactName": "${name}-${version}-mac-${arch}.${ext}"
     },
     "win": {
@@ -44,6 +45,7 @@
         { "target": "nsis", "arch": ["x64"] },
         { "target": "portable", "arch": ["x64"] }
       ],
+      "icon": "build-assets/icon.png",
       "artifactName": "${name}-${version}-win-${arch}.${ext}"
     },
     "nsis": {
@@ -57,6 +59,7 @@
         { "target": "deb", "arch": ["x64"] }
       ],
       "category": "Utility",
+      "icon": "build-assets/icon.png",
       "artifactName": "${name}-${version}-linux-${arch}.${ext}"
     },
     "publish": {

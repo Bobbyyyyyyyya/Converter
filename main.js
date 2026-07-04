@@ -130,9 +130,9 @@ ipcMain.handle('select-files', async () => {
     properties: ['openFile', 'multiSelections'],
     filters: [
       { name: 'All Files', extensions: ['*'] },
-      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif'] },
-      { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'] },
-      { name: 'Video', extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv'] },
+      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'heif', 'jp2'] },
+      { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'aiff', 'alac', 'ac3', 'amr', 'mp2'] },
+      { name: 'Video', extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv', '3gp', 'm4v', 'mpg', 'mpeg', 'ogv', 'ts', 'mts', 'm2ts'] },
     ],
   });
   return result.canceled ? [] : result.filePaths;

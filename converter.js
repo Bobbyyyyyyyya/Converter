@@ -1,5 +1,4 @@
 const path = require('path');
-const fs = require('fs');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
 
@@ -7,9 +6,18 @@ const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 const SUPPORTED = {
-  image: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif'],
-  audio: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'],
-  video: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv'],
+  image: [
+    'jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif',
+    'heic', 'heif', 'jp2',
+  ],
+  audio: [
+    'mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma',
+    'opus', 'aiff', 'alac', 'ac3', 'amr', 'mp2',
+  ],
+  video: [
+    'mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv',
+    '3gp', 'm4v', 'mpg', 'mpeg', 'ogv', 'ts', 'mts', 'm2ts',
+  ],
 };
 
 const TYPE_MAP = {};
@@ -27,11 +35,11 @@ function getFormatInfo(filePath) {
 function getTargetsForType(type) {
   switch (type) {
     case 'image':
-      return SUPPORTED.image.filter((e) => e !== 'gif' && e !== 'avif').concat(['gif', 'avif']);
+      return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'jp2'];
     case 'audio':
-      return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'];
+      return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'aiff', 'ac3', 'mp2'];
     case 'video':
-      return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif'];
+      return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif', '3gp', 'm4v', 'mpg', 'ogv', 'ts'];
     default:
       return [];
   }
@@ -46,7 +54,7 @@ async function convertFile(inputPath, outputPath, targetFormat, onProgress) {
   } else if (type === 'audio' || type === 'video') {
     await convertFFmpeg(inputPath, outputPath, targetFormat, onProgress);
   } else {
-    throw new Error(`Onbekend bestandstype: .${ext}`);
+    throw new Error(`Unsupported file type: .${ext}`);
   }
 }
 
@@ -77,20 +85,24 @@ async function convertImage(inputPath, outputPath, targetFormat, onProgress) {
     return;
   } else if (targetFormat === 'avif') {
     pipeline = pipeline.avif({ quality: 80 });
+  } else if (targetFormat === 'heic' || targetFormat === 'heif') {
+    pipeline = pipeline.heif({ quality: 85 });
+  } else if (targetFormat === 'jp2') {
+    pipeline = pipeline.jp2({ quality: 85 });
   } else {
-    throw new Error(`Onbekend afbeeldingformaat: ${targetFormat}`);
+    throw new Error(`Unsupported image format: ${targetFormat}`);
   }
 
   onProgress?.(50);
-
   await pipeline.toFile(outputPath);
-
   onProgress?.(100);
 }
 
 function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress) {
   return new Promise((resolve, reject) => {
     const command = ffmpeg(inputPath);
+
+    const audioFormats = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'aiff', 'ac3', 'mp2', 'alac'];
 
     if (targetFormat === 'gif') {
       command.outputOptions([
@@ -99,13 +111,18 @@ function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress) {
     }
 
     command
-      .toFormat(targetFormat === 'mp3' || targetFormat === 'wav' || targetFormat === 'ogg' || targetFormat === 'flac' || targetFormat === 'aac' || targetFormat === 'm4a' ? undefined : targetFormat)
+      .toFormat(audioFormats.includes(targetFormat) ? undefined : targetFormat)
       .audioCodec(targetFormat === 'mp3' ? 'libmp3lame' : undefined)
       .audioCodec(targetFormat === 'aac' ? 'aac' : undefined)
       .audioCodec(targetFormat === 'ogg' ? 'libvorbis' : undefined)
       .audioCodec(targetFormat === 'flac' ? 'flac' : undefined)
       .audioCodec(targetFormat === 'm4a' ? 'aac' : undefined)
       .audioCodec(targetFormat === 'wav' ? 'pcm_s16le' : undefined)
+      .audioCodec(targetFormat === 'opus' ? 'libopus' : undefined)
+      .audioCodec(targetFormat === 'aiff' ? 'pcm_s16be' : undefined)
+      .audioCodec(targetFormat === 'ac3' ? 'ac3' : undefined)
+      .audioCodec(targetFormat === 'mp2' ? 'mp2' : undefined)
+      .audioCodec(targetFormat === 'alac' ? 'alac' : undefined)
       .on('start', () => onProgress?.(5))
       .on('progress', (info) => {
         if (info.percent) onProgress?.(Math.round(info.percent));
@@ -114,7 +131,7 @@ function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress) {
         onProgress?.(100);
         resolve();
       })
-      .on('error', (err) => reject(new Error(`FFmpeg fout: ${err.message}`)))
+      .on('error', (err) => reject(new Error(`FFmpeg error: ${err.message}`)))
       .save(outputPath);
   });
 }

@@ -196,7 +196,7 @@ function updateTargetFormatOptions() {
   const commonTypes = new Set(selectedFiles.map((f) => f.type));
   const commonTargets = commonTypes.size === 1
     ? getTargetsForType(selectedFiles[0].type)
-    : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'avi', 'mov', 'mkv', 'webm'];
+    : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'jp2', '3gp', 'mpg'];
 
   const seen = new Set();
   for (const fmt of commonTargets) {
@@ -212,9 +212,9 @@ function updateTargetFormatOptions() {
 
 function getTargetsForType(type) {
   switch (type) {
-    case 'image': return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif'];
-    case 'audio': return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'];
-    case 'video': return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif'];
+    case 'image': return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'jp2'];
+    case 'audio': return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'aiff', 'ac3', 'mp2'];
+    case 'video': return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif', '3gp', 'm4v', 'mpg', 'ogv', 'ts'];
     default: return [];
   }
 }

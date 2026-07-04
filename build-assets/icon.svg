@@ -1,0 +1,49 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0e0ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="128" cy="128" r="200" fill="rgba(255,255,255,0.03)"/>
+  <circle cx="384" cy="384" r="180" fill="rgba(255,255,255,0.04)"/>
+
+  <!-- Left arrow (input) -->
+  <g transform="translate(120, 256)">
+    <line x1="0" y1="0" x2="140" y2="0" stroke="url(#arrow)" stroke-width="24" stroke-linecap="round" opacity="0.4"/>
+    <path d="M40 40L0 0L40-40" stroke="url(#arrow)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  </g>
+
+  <!-- Right arrow (output) -->
+  <g transform="translate(392, 256)">
+    <line x1="0" y1="0" x2="-140" y2="0" stroke="url(#arrow)" stroke-width="24" stroke-linecap="round" opacity="0.4"/>
+    <path d="M-40 40L0 0L-40-40" stroke="url(#arrow)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  </g>
+
+  <!-- Center squares -->
+  <rect x="196" y="156" width="120" height="80" rx="16" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="4"/>
+  <rect x="196" y="276" width="120" height="80" rx="16" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="4"/>
+
+  <!-- Arrows between squares -->
+  <path d="M256 236L268 256H244L256 236Z" fill="rgba(255,255,255,0.6)"/>
+  <path d="M256 276L244 256H268L256 276Z" fill="rgba(255,255,255,0.6)"/>
+
+  <!-- File icons on squares -->
+  <!-- Top file -->
+  <circle cx="226" cy="186" r="10" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="256" cy="186" r="10" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="286" cy="186" r="10" fill="rgba(255,255,255,0.2)"/>
+
+  <!-- Bottom file -->
+  <rect x="221" y="302" width="70" height="8" rx="4" fill="rgba(255,255,255,0.2)"/>
+  <rect x="221" y="318" width="50" height="8" rx="4" fill="rgba(255,255,255,0.15)"/>
+  <rect x="221" y="334" width="60" height="8" rx="4" fill="rgba(255,255,255,0.15)"/>
+</svg>
