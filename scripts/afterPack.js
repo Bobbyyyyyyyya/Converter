@@ -23,16 +23,18 @@ exports.default = async function (context) {
     console.log('Ad-hoc signing complete via @electron/osx-sign');
   } catch (e) {
     console.error('@electron/osx-sign failed:', e.message);
+    console.log('Falling back to manual codesign...');
+    try {
+      execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' });
+      console.log('Manual ad-hoc signing complete');
+    } catch (e2) {
+      console.error('Manual codesign also failed:', e2.message);
+    }
   }
 
-  try {
-    execSync(`xattr -cr "${appPath}"`, { stdio: 'inherit' });
-    console.log('Extended attributes cleared');
-  } catch (_) {}
+  execSync(`xattr -cr "${appPath}"`, { stdio: 'inherit' });
 
-  try {
-    execSync(`codesign -dv "${appPath}" 2>&1`, { stdio: 'inherit' });
-  } catch (_) {}
+  execSync(`codesign -dv --verbose=4 "${appPath}" 2>&1`, { stdio: 'inherit' });
 
   console.log('=== Done ===\n');
 };
