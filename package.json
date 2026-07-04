@@ -29,6 +29,7 @@
       "styles.css",
       "renderer.js",
       "package.json",
+      "scripts/**/*",
       "build-assets/**/*",
       "node_modules/**/*"
     ],
@@ -53,7 +54,8 @@
       "icon": "build-assets/icon.png",
       "artifactName": "${name}-${version}-mac-${arch}.${ext}",
       "gatekeeperAssess": false,
-      "hardenedRuntime": false
+      "hardenedRuntime": false,
+      "afterPack": "scripts/afterPack.js"
     },
     "win": {
       "target": [
