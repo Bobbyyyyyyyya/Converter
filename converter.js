@@ -105,7 +105,7 @@ async function convertImage(inputPath, outputPath, targetFormat, onProgress) {
   } else if (targetFormat === 'avif') {
     pipeline = pipeline.avif({ quality: 80 });
   } else if (targetFormat === 'heic' || targetFormat === 'heif') {
-    pipeline = pipeline.heif({ quality: 85 });
+    pipeline = pipeline.heif({ compression: 'hevc', quality: 85 });
   } else if (targetFormat === 'jp2') {
     pipeline = pipeline.jp2({ quality: 85 });
   } else {
@@ -121,7 +121,36 @@ function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress) {
   return new Promise((resolve, reject) => {
     const command = ffmpeg(inputPath);
 
-    const audioFormats = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'aiff', 'ac3', 'mp2', 'alac'];
+    const audioCodecMap = {
+      'mp3': 'libmp3lame',
+      'aac': 'aac',
+      'ogg': 'vorbis',
+      'flac': 'flac',
+      'm4a': 'aac',
+      'wav': 'pcm_s16le',
+      'opus': 'libopus',
+      'aiff': 'pcm_s16be',
+      'ac3': 'ac3',
+      'mp2': 'mp2',
+      'alac': 'alac',
+    };
+
+    const videoCodecMap = {
+      'mp4': 'libx264',
+      'mov': 'libx264',
+      'mkv': 'libx264',
+      'm4v': 'libx264',
+      '3gp': 'libx264',
+      'ts': 'libx264',
+      'avi': 'mpeg4',
+      'webm': 'libvpx-vp9',
+      'flv': 'libx264',
+      'mpg': 'mpeg2video',
+      'mpeg': 'mpeg2video',
+      'hevc': 'libx265',
+    };
+
+    const videoFormats = ['mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv', '3gp', 'm4v', 'mpg', 'mpeg', 'ogv', 'ts', 'mts', 'm2ts'];
 
     if (targetFormat === 'gif') {
       command.outputOptions([
@@ -129,19 +158,17 @@ function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress) {
       ]);
     }
 
+    const audioCodec = audioCodecMap[targetFormat];
+    const videoCodec = videoCodecMap[targetFormat];
+
+    if (videoFormats.includes(targetFormat)) {
+      command.toFormat(targetFormat);
+    }
+
+    if (audioCodec) command.audioCodec(audioCodec);
+    if (videoCodec) command.videoCodec(videoCodec);
+
     command
-      .toFormat(audioFormats.includes(targetFormat) ? undefined : targetFormat)
-      .audioCodec(targetFormat === 'mp3' ? 'libmp3lame' : undefined)
-      .audioCodec(targetFormat === 'aac' ? 'aac' : undefined)
-      .audioCodec(targetFormat === 'ogg' ? 'libvorbis' : undefined)
-      .audioCodec(targetFormat === 'flac' ? 'flac' : undefined)
-      .audioCodec(targetFormat === 'm4a' ? 'aac' : undefined)
-      .audioCodec(targetFormat === 'wav' ? 'pcm_s16le' : undefined)
-      .audioCodec(targetFormat === 'opus' ? 'libopus' : undefined)
-      .audioCodec(targetFormat === 'aiff' ? 'pcm_s16be' : undefined)
-      .audioCodec(targetFormat === 'ac3' ? 'ac3' : undefined)
-      .audioCodec(targetFormat === 'mp2' ? 'mp2' : undefined)
-      .audioCodec(targetFormat === 'alac' ? 'alac' : undefined)
       .on('start', () => onProgress?.(5))
       .on('progress', (info) => {
         if (info.percent) onProgress?.(Math.round(info.percent));
