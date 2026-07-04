@@ -20,6 +20,7 @@ env:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-latest
@@ -58,8 +59,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Rebuild native modules
-        run: npx electron-rebuild -f -w sharp 2>/dev/null || true
+      - name: Show versions
+        run: node -e "console.log('node:', process.version)"; npx sharp --version 2>/dev/null || true
 
       - name: Build (${{ matrix.target }})
         run: >
