@@ -28,6 +28,7 @@
       "index.html",
       "styles.css",
       "renderer.js",
+      "package.json",
       "build-assets/**/*",
       "node_modules/**/*"
     ],
