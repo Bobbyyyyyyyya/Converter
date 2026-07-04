@@ -29,8 +29,20 @@ let currentOutputDir = '';
 
 // ---- Version & Updates ----
 
+const modalVersion = document.getElementById('modalVersion');
+const helpBtn = document.getElementById('helpBtn');
+const helpModal = document.getElementById('helpModal');
+const helpClose = document.getElementById('helpClose');
+
 window.converter.getAppVersion().then((v) => {
   versionDisplay.textContent = v;
+  modalVersion.textContent = v;
+});
+
+helpBtn.addEventListener('click', () => { helpModal.style.display = 'flex'; });
+helpClose.addEventListener('click', () => { helpModal.style.display = 'none'; });
+helpModal.addEventListener('click', (e) => {
+  if (e.target === helpModal) helpModal.style.display = 'none';
 });
 
 let updateState = null;

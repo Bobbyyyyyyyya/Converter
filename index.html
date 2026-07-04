@@ -128,8 +128,55 @@
 
     <footer class="footer">
       <span>v<span id="versionDisplay">1.0.0</span></span>
+      <button id="helpBtn" class="btn btn-text">Help</button>
       <button id="checkUpdateBtn" class="btn btn-text">Check for updates</button>
     </footer>
+
+    <div class="modal-overlay" id="helpModal" style="display:none">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>About Converter</h2>
+          <button id="helpClose" class="btn btn-update-ghost">×</button>
+        </div>
+        <div class="modal-body">
+          <section>
+            <h3>How to use</h3>
+            <ol>
+              <li>Drop or click to select files (images, audio, or video)</li>
+              <li>Choose a target format from the dropdown</li>
+              <li>Pick an output folder</li>
+              <li>Click <strong>Convert</strong></li>
+            </ol>
+          </section>
+          <section>
+            <h3>Supported formats</h3>
+            <div class="format-group">
+              <strong>Image</strong>
+              <span>AVIF, BMP, GIF, HEIC, JPEG, JP2, JPEG XL, PNG, RAW (CR2/NEF/ARW/DNG), TIFF, WEBP, SVG</span>
+            </div>
+            <div class="format-group">
+              <strong>Audio</strong>
+              <span>AAC, AIFF, FLAC, M4A, MP3, OPUS, Vorbis (OGG), WAV, WMA</span>
+            </div>
+            <div class="format-group">
+              <strong>Video</strong>
+              <span>AVI, FLV, MKV, MOV, MP4, MPEG, OGV, WEBM, WMV, 3GP, GIF (video to GIF)</span>
+            </div>
+          </section>
+          <section>
+            <h3>Tips</h3>
+            <ul>
+              <li>Hold <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> to select multiple files</li>
+              <li>Large video files may take longer to convert</li>
+              <li>Output files are saved in your chosen folder</li>
+            </ul>
+          </section>
+          <section class="modal-footer-text">
+            <p>Converter v<span id="modalVersion">1.0.0</span> &mdash; Built with Electron, sharp &amp; FFmpeg</p>
+          </section>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="renderer.js"></script>
