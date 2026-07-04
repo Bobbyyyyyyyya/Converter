@@ -59,8 +59,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Show versions
-        run: node -e "console.log('node:', process.version)"; npx sharp --version 2>/dev/null || true
+      - name: Check node version
+        run: node -e "console.log('node:', process.version)"
+      - name: Check sharp version
+        run: npx sharp --version || true
 
       - name: Build (${{ matrix.target }})
         run: >
