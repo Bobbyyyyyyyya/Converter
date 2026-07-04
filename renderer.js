@@ -14,9 +14,84 @@ const results = document.getElementById('results');
 const resultsList = document.getElementById('resultsList');
 const resultsSummary = document.getElementById('resultsSummary');
 const newConversionBtn = document.getElementById('newConversion');
+const updateBanner = document.getElementById('updateBanner');
+const updateIcon = document.getElementById('updateIcon');
+const updateTitle = document.getElementById('updateTitle');
+const updateDesc = document.getElementById('updateDesc');
+const updateActions = document.getElementById('updateActions');
+const updateBtn = document.getElementById('updateBtn');
+const updateDismiss = document.getElementById('updateDismiss');
+const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+const versionDisplay = document.getElementById('versionDisplay');
 
 let selectedFiles = [];
 let currentOutputDir = '';
+
+// ---- Version & Updates ----
+
+window.converter.getAppVersion().then((v) => {
+  versionDisplay.textContent = v;
+});
+
+let updateState = null;
+
+window.converter.onUpdateStatus((data) => {
+  switch (data.status) {
+    case 'checking':
+      showUpdate('checking', '⟳', 'Checking for updates...', '');
+      break;
+    case 'available':
+      showUpdate('available', '⬇', `Update v${data.version} available`, 'Click to download');
+      updateBtn.textContent = 'Download';
+      updateBtn.onclick = () => window.converter.downloadUpdate();
+      updateActions.style.display = 'flex';
+      break;
+    case 'not-available':
+      showUpdate('not-available', '✓', 'You\'re up to date', `v${versionDisplay.textContent} is the latest version`);
+      updateActions.style.display = 'none';
+      setTimeout(hideUpdate, 3000);
+      break;
+    case 'downloading':
+      updateIcon.className = 'update-icon downloading';
+      updateTitle.textContent = 'Downloading update...';
+      updateDesc.textContent = `${data.percent}%`;
+      updateBtn.textContent = `${data.percent}%`;
+      updateBtn.disabled = true;
+      break;
+    case 'downloaded':
+      showUpdate('downloaded', '⬇', 'Update ready to install', 'Restart to apply');
+      updateBtn.textContent = 'Install';
+      updateBtn.disabled = false;
+      updateBtn.onclick = () => window.converter.installUpdate();
+      updateActions.style.display = 'flex';
+      break;
+    case 'error':
+      showUpdate('error', '✗', 'Update check failed', data.message);
+      updateActions.style.display = 'none';
+      setTimeout(hideUpdate, 4000);
+      break;
+  }
+});
+
+function showUpdate(state, icon, title, desc) {
+  updateIcon.textContent = icon;
+  updateIcon.className = 'update-icon';
+  updateTitle.textContent = title;
+  updateDesc.textContent = desc;
+  updateBanner.style.display = 'block';
+}
+
+function hideUpdate() {
+  updateBanner.style.display = 'none';
+}
+
+updateDismiss.addEventListener('click', hideUpdate);
+
+checkUpdateBtn.addEventListener('click', () => {
+  window.converter.checkUpdate();
+});
+
+// ---- Drop Zone ----
 
 dropZone.addEventListener('click', async () => {
   const files = await window.converter.selectFiles();
@@ -46,6 +121,8 @@ dropZone.addEventListener('mousemove', (e) => {
   dropZone.style.setProperty('--mouse-x', x + '%');
   dropZone.style.setProperty('--mouse-y', y + '%');
 });
+
+// ---- File Management ----
 
 async function addFiles(paths) {
   const newFiles = [];
@@ -146,6 +223,8 @@ function updateConvertButton() {
   convertBtn.disabled = selectedFiles.length === 0 || !currentOutputDir;
 }
 
+// ---- Output Directory ----
+
 selectOutputDirBtn.addEventListener('click', async () => {
   const dir = await window.converter.selectOutputDir();
   if (dir) {
@@ -169,6 +248,8 @@ function resetUI() {
   outputDir.value = '';
   convertBtn.disabled = true;
 }
+
+// ---- Conversion ----
 
 convertBtn.addEventListener('click', async () => {
   const format = targetFormat.value;

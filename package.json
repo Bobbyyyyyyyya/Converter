@@ -1,27 +1,87 @@
 {
-  "name": "file-converter",
+  "name": "converter",
   "version": "1.0.0",
-  "description": "Multi-format file converter for images, audio, and video",
+  "description": "Convert images, audio & video between formats",
   "main": "main.js",
+  "author": "Converter App",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --dev"
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "release": "electron-builder --publish always",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.converter.app",
+    "productName": "Converter",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "converter.js",
+      "index.html",
+      "styles.css",
+      "renderer.js",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ],
+      "category": "public.app-category.utilities",
+      "icon": null,
+      "artifactName": "${name}-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "artifactName": "${name}-${version}-win-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "linux": {
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
+      ],
+      "category": "Utility",
+      "artifactName": "${name}-${version}-linux-${arch}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "YOUR_GITHUB_USERNAME",
+      "repo": "converter",
+      "releaseType": "release"
+    }
   },
   "keywords": [
     "converter",
     "electron",
     "image",
     "audio",
-    "video"
+    "video",
+    "cross-platform"
   ],
-  "license": "MIT",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
-    "electron": "^43.0.0",
+    "electron-updater": "^6.0.0",
     "fluent-ffmpeg": "^2.1.3",
     "sharp": "^0.35.3"
   },
-  "allowScripts": {
-    "@ffmpeg-installer/darwin-arm64@4.1.5": true
+  "devDependencies": {
+    "electron": "^43.0.0",
+    "electron-builder": "^25.0.0"
   }
 }

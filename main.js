@@ -1,8 +1,12 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
+const { autoUpdater } = require('electron-updater');
 const { convertFile, getFormatInfo } = require('./converter');
 
 let mainWindow;
+
+autoUpdater.autoDownload = false;
+autoUpdater.logger = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -10,7 +14,7 @@ function createWindow() {
     height: 700,
     minWidth: 700,
     minHeight: 500,
-    title: 'File Converter',
+    title: 'Converter',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -19,9 +23,99 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+
+  const menu = Menu.buildFromTemplate([
+    {
+      label: 'Converter',
+      submenu: [
+        { role: 'about' },
+        {
+          label: 'Check for Updates...',
+          accelerator: 'CmdOrCtrl+U',
+          click: () => checkForUpdates(),
+        },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'reload' },
+      ],
+    },
+  ]);
+  Menu.setApplicationMenu(menu);
 }
 
-app.whenReady().then(createWindow);
+function sendStatus(status, data) {
+  mainWindow?.webContents.send('update-status', { status, ...data });
+}
+
+async function checkForUpdates() {
+  sendStatus('checking');
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+autoUpdater.on('update-available', (info) => {
+  sendStatus('available', {
+    version: info.version,
+    releaseDate: info.releaseDate,
+    releaseNotes: info.releaseNotes,
+  });
+});
+
+autoUpdater.on('update-not-available', () => {
+  sendStatus('not-available');
+});
+
+autoUpdater.on('error', (err) => {
+  sendStatus('error', { message: err.message });
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  sendStatus('downloading', { percent: Math.round(progress.percent) });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  sendStatus('downloaded', { version: info.version });
+});
+
+ipcMain.handle('check-update', async () => {
+  return checkForUpdates();
+});
+
+ipcMain.handle('download-update', async () => {
+  autoUpdater.downloadUpdate();
+});
+
+ipcMain.handle('install-update', async () => {
+  autoUpdater.quitAndInstall();
+});
+
+app.whenReady().then(() => {
+  createWindow();
+  setTimeout(() => checkForUpdates(), 3000);
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -35,8 +129,8 @@ ipcMain.handle('select-files', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile', 'multiSelections'],
     filters: [
-      { name: 'Alles', extensions: ['*'] },
-      { name: 'Afbeeldingen', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif'] },
+      { name: 'All Files', extensions: ['*'] },
+      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif'] },
       { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'] },
       { name: 'Video', extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv'] },
     ],
@@ -69,4 +163,8 @@ ipcMain.handle('select-output-dir', async () => {
     properties: ['openDirectory'],
   });
   return result.canceled ? null : result.filePaths[0];
+});
+
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
 });
