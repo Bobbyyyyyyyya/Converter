@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Convert images, audio & video between formats",
   "main": "main.js",
-  "author": "Converter App",
+  "author": "Converter App <converter@app.com>",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
@@ -96,8 +96,8 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "YOUR_GITHUB_USERNAME",
-      "repo": "converter",
+      "owner": "Bobbyyyyyyyya",
+      "repo": "Converter",
       "releaseType": "release"
     }
   },
