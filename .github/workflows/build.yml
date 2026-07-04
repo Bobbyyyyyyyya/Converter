@@ -53,11 +53,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Check node version
-        run: node -e "console.log('node:', process.version)"
-      - name: Check sharp version
-        run: npx sharp --version || true
-
       - name: Build (${{ matrix.target }})
         run: >
           npx electron-builder

@@ -33,6 +33,7 @@
       "build-assets/**/*",
       "node_modules/**/*"
     ],
+    "afterPack": "scripts/afterPack.js",
     "mac": {
       "target": [
         {
@@ -54,8 +55,7 @@
       "icon": "build-assets/icon.png",
       "artifactName": "${name}-${version}-mac-${arch}.${ext}",
       "gatekeeperAssess": false,
-      "hardenedRuntime": false,
-      "afterPack": "scripts/afterPack.js"
+      "hardenedRuntime": false
     },
     "win": {
       "target": [
