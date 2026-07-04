@@ -32,6 +32,8 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v7
 
@@ -53,38 +55,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build (${{ matrix.target }})
+      - name: Build & publish (${{ matrix.target }})
         run: >
           npx electron-builder
           --${{ contains(matrix.target, 'mac') && 'mac' || contains(matrix.target, 'win') && 'win' || 'linux' }}
-          --publish never
+          --publish always
           --config.extraMetadata.main=main.js
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v6
-        with:
-          name: converter-${{ matrix.target }}
-          path: dist/*
-          if-no-files-found: warn
-
-  release:
-    needs: [build]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          pattern: converter-*
-          merge-multiple: true
-
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            *.dmg
-            *.zip
-            *.exe
-            *.AppImage
-            *.deb
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
