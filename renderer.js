@@ -164,9 +164,9 @@ function renderFileList() {
 
   selectedFiles.forEach((f, i) => {
     const li = document.createElement('li');
-    const typeClass = getFileTypeClass(f.type);
+    const typeClass = getFileTypeClass(f.type, f.ext);
     li.innerHTML = `
-      <span class="file-icon ${typeClass}">${getFileEmoji(f.type)}</span>
+      <span class="file-icon ${typeClass}">${getFileEmoji(f.type, f.ext)}</span>
       <span class="file-name">${f.path.split('/').pop()}</span>
       <span class="file-ext">${f.ext}</span>
       <button class="file-remove" data-index="${i}">×</button>
@@ -183,7 +183,8 @@ function renderFileList() {
   });
 }
 
-function getFileEmoji(type) {
+function getFileEmoji(type, ext) {
+  if (type === 'document' || ext === 'pdf') return '📄';
   switch (type) {
     case 'image': return '🖼';
     case 'audio': return '🎵';
@@ -192,7 +193,8 @@ function getFileEmoji(type) {
   }
 }
 
-function getFileTypeClass(type) {
+function getFileTypeClass(type, ext) {
+  if (type === 'document' || ext === 'pdf') return 'document';
   switch (type) {
     case 'image': return 'image';
     case 'audio': return 'audio';
@@ -208,7 +210,7 @@ function updateTargetFormatOptions() {
   const commonTypes = new Set(selectedFiles.map((f) => f.type));
   const commonTargets = commonTypes.size === 1
     ? getTargetsForType(selectedFiles[0].type)
-    : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'jp2', '3gp', 'mpg'];
+    : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'jp2', '3gp', 'mpg', 'pdf', 'txt'];
 
   const seen = new Set();
   for (const fmt of commonTargets) {
@@ -224,9 +226,10 @@ function updateTargetFormatOptions() {
 
 function getTargetsForType(type) {
   switch (type) {
-    case 'image': return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'jp2'];
+    case 'image': return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'jp2', 'pdf'];
     case 'audio': return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'aiff', 'ac3', 'mp2'];
     case 'video': return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif', '3gp', 'm4v', 'mpg', 'ogv', 'ts'];
+    case 'document': return ['pdf', 'txt'];
     default: return [];
   }
 }

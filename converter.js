@@ -2,6 +2,8 @@ const path = require('path');
 const fs = require('fs');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
+const PDFDocument = require('pdfkit');
+const mammoth = require('mammoth');
 
 const ffmpegPath = process.env.FFMPEG_PATH || findSystemFfmpeg() || require('@ffmpeg-installer/ffmpeg').path;
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -27,7 +29,7 @@ function findSystemFfmpeg() {
 const SUPPORTED = {
   image: [
     'jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif',
-    'heic', 'heif', 'jp2',
+    'heic', 'heif', 'jp2', 'pdf',
   ],
   audio: [
     'mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma',
@@ -36,6 +38,9 @@ const SUPPORTED = {
   video: [
     'mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv',
     '3gp', 'm4v', 'mpg', 'mpeg', 'ogv', 'ts', 'mts', 'm2ts',
+  ],
+  document: [
+    'txt', 'docx', 'doc',
   ],
 };
 
@@ -54,11 +59,13 @@ function getFormatInfo(filePath) {
 function getTargetsForType(type) {
   switch (type) {
     case 'image':
-      return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'jp2'];
+      return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'jp2', 'pdf'];
     case 'audio':
       return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'aiff', 'ac3', 'mp2'];
     case 'video':
       return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif', '3gp', 'm4v', 'mpg', 'ogv', 'ts'];
+    case 'document':
+      return ['pdf', 'txt'];
     default:
       return [];
   }
@@ -72,6 +79,8 @@ async function convertFile(inputPath, outputPath, targetFormat, onProgress) {
     await convertImage(inputPath, outputPath, targetFormat, onProgress);
   } else if (type === 'audio' || type === 'video') {
     await convertFFmpeg(inputPath, outputPath, targetFormat, onProgress);
+  } else if (type === 'document') {
+    await convertDocument(inputPath, outputPath, targetFormat, onProgress);
   } else {
     throw new Error(`Unsupported file type: .${ext}`);
   }
@@ -108,6 +117,8 @@ async function convertImage(inputPath, outputPath, targetFormat, onProgress) {
     pipeline = pipeline.heif({ compression: 'hevc', quality: 85 });
   } else if (targetFormat === 'jp2') {
     pipeline = pipeline.jp2({ quality: 85 });
+  } else if (targetFormat === 'pdf') {
+    pipeline = pipeline.pdf();
   } else {
     throw new Error(`Unsupported image format: ${targetFormat}`);
   }
@@ -180,6 +191,50 @@ function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress) {
       .on('error', (err) => reject(new Error(`FFmpeg error: ${err.message}`)))
       .save(outputPath);
   });
+}
+
+async function convertDocument(inputPath, outputPath, targetFormat, onProgress) {
+  const ext = path.extname(inputPath).toLowerCase().replace('.', '');
+  onProgress?.(10);
+
+  if (targetFormat === 'pdf') {
+    const doc = new PDFDocument({ autoFirstPage: false });
+    const writeStream = fs.createWriteStream(outputPath);
+    doc.pipe(writeStream);
+
+    if (ext === 'txt') {
+      const content = fs.readFileSync(inputPath, 'utf-8');
+      const lines = content.split('\n');
+      doc.addPage();
+      doc.fontSize(11);
+      for (const line of lines) {
+        doc.text(line);
+      }
+    } else if (ext === 'docx' || ext === 'doc') {
+      const result = await mammoth.convertToHtml({ path: inputPath });
+      const html = result.value;
+      const lines = html.replace(/<[^>]+>/g, '').split('\n');
+      doc.addPage();
+      doc.fontSize(11);
+      for (const line of lines) {
+        if (line.trim()) doc.text(line.trim());
+      }
+    }
+
+    doc.end();
+    await new Promise((resolve) => writeStream.on('finish', resolve));
+    onProgress?.(100);
+  } else if (targetFormat === 'txt') {
+    if (ext === 'txt') {
+      fs.copyFileSync(inputPath, outputPath);
+    } else if (ext === 'docx' || ext === 'doc') {
+      const result = await mammoth.extractRawText({ path: inputPath });
+      fs.writeFileSync(outputPath, result.value, 'utf-8');
+    }
+    onProgress?.(100);
+  } else {
+    throw new Error(`Unsupported target format for document: ${targetFormat}`);
+  }
 }
 
 module.exports = { convertFile, getFormatInfo };
