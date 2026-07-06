@@ -339,11 +339,14 @@ async function convertModel3dToGltf(inputPath, outputPath, targetFormat, onProgr
     const buf = Buffer.from(result.GetFile(0).GetContent());
     fs.writeFileSync(outputPath, buf);
   } else {
-    for (let i = 0; i < result.FileCount(); i++) {
+    let gltfContent = new TextDecoder().decode(result.GetFile(0).GetContent());
+    for (let i = 1; i < result.FileCount(); i++) {
       const rf = result.GetFile(i);
-      const outFile = i === 0 ? outputPath : path.join(path.dirname(outputPath), rf.GetPath());
-      fs.writeFileSync(outFile, Buffer.from(rf.GetContent()));
+      const binName = rf.GetPath();
+      const b64 = Buffer.from(rf.GetContent()).toString('base64');
+      gltfContent = gltfContent.replaceAll(binName, `data:application/octet-stream;base64,${b64}`);
     }
+    fs.writeFileSync(outputPath, gltfContent);
   }
 
   onProgress?.(100);

@@ -298,6 +298,7 @@ convertBtn.addEventListener('click', async () => {
 
   progressFill.style.width = '100%';
   progressText.textContent = 'Conversion complete!';
+  progressContainer.style.display = 'none';
 
   showResults(convertResults);
 });
