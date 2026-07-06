@@ -814,6 +814,14 @@ body {
 }
 
 /* Footer */
+/* Open Player Bar */
+.open-player-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+/* Footer */
 .footer {
   margin-top: auto;
   padding-top: 24px;

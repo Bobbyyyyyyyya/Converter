@@ -331,3 +331,9 @@ function showResults(convertResults) {
 }
 
 newConversionBtn.addEventListener('click', resetUI);
+
+// ---- Open Player ----
+
+document.getElementById('openPlayerBtn').addEventListener('click', () => {
+  window.converter.openPlayer();
+});

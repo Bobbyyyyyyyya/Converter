@@ -15,4 +15,5 @@ contextBridge.exposeInMainWorld('converter', {
   onUpdateStatus: (callback) => {
     ipcRenderer.on('update-status', (_event, data) => callback(data));
   },
+  openPlayer: () => ipcRenderer.invoke('open-player'),
 });

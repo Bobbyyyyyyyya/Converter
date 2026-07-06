@@ -1,9 +1,12 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 const { convertFile, getFormatInfo } = require('./converter');
 
 let mainWindow;
+let playerWindow;
+const RECENT_FILE = path.join(app.getPath('userData'), 'recent-files.json');
 
 autoUpdater.autoDownload = false;
 autoUpdater.logger = null;
@@ -19,6 +22,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: false,
+      allowFileAccess: true,
     },
   });
 
@@ -36,6 +41,16 @@ function createWindow() {
         },
         { type: 'separator' },
         { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Player',
+      submenu: [
+        {
+          label: 'Open Media Player',
+          accelerator: 'CmdOrCtrl+P',
+          click: () => openPlayerWindow(),
+        },
       ],
     },
     {
@@ -60,6 +75,46 @@ function createWindow() {
     },
   ]);
   Menu.setApplicationMenu(menu);
+}
+
+function openPlayerWindow() {
+  if (playerWindow && !playerWindow.isDestroyed()) {
+    playerWindow.focus();
+    return;
+  }
+
+  playerWindow = new BrowserWindow({
+    width: 1100,
+    height: 750,
+    minWidth: 800,
+    minHeight: 500,
+    title: 'Media Player',
+    webPreferences: {
+      preload: path.join(__dirname, 'player-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      webSecurity: false,
+      allowFileAccess: true,
+    },
+  });
+
+  playerWindow.loadFile('player.html');
+  playerWindow.on('closed', () => { playerWindow = null; });
+}
+
+function loadRecent() {
+  try {
+    if (fs.existsSync(RECENT_FILE)) {
+      return JSON.parse(fs.readFileSync(RECENT_FILE, 'utf8'));
+    }
+  } catch {}
+  return [];
+}
+
+function saveRecent(files) {
+  try {
+    fs.writeFileSync(RECENT_FILE, JSON.stringify(files.slice(0, 50)), 'utf8');
+  } catch {}
 }
 
 function sendStatus(status, data) {
@@ -125,6 +180,8 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
+// ---- Converter IPC ----
+
 ipcMain.handle('select-files', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile', 'multiSelections'],
@@ -170,4 +227,85 @@ ipcMain.handle('select-output-dir', async () => {
 
 ipcMain.handle('get-app-version', () => {
   return app.getVersion();
+});
+
+ipcMain.handle('get-platform', () => {
+  return process.platform;
+});
+
+// ---- Player IPC ----
+
+ipcMain.handle('open-player', () => {
+  openPlayerWindow();
+});
+
+ipcMain.handle('read-directory', async (_event, dirPath) => {
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    const files = [];
+    const folders = [];
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue;
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        folders.push({ name: entry.name, path: fullPath, isDirectory: true, size: 0 });
+      } else {
+        const ext = path.extname(entry.name).toLowerCase().replace('.', '');
+        const info = getFormatInfo(entry.name);
+        let size = 0;
+        try { size = fs.statSync(fullPath).size; } catch {}
+        files.push({
+          name: entry.name,
+          path: fullPath,
+          isDirectory: false,
+          ext,
+          type: info.type,
+          size,
+        });
+      }
+    }
+    folders.sort((a, b) => a.name.localeCompare(b.name));
+    files.sort((a, b) => a.name.localeCompare(b.name));
+    return { success: true, entries: [...folders, ...files], path: dirPath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('get-home-dir', () => {
+  return require('os').homedir();
+});
+
+ipcMain.handle('get-recent-files', () => {
+  return loadRecent();
+});
+
+ipcMain.handle('add-to-recent', (_event, filePath) => {
+  const recent = loadRecent();
+  const filtered = recent.filter((f) => f !== filePath);
+  filtered.unshift(filePath);
+  saveRecent(filtered);
+});
+
+ipcMain.handle('clear-recent', () => {
+  saveRecent([]);
+});
+
+ipcMain.handle('get-drives', () => {
+  if (process.platform === 'darwin') {
+    return ['/'];
+  }
+  if (process.platform === 'win32') {
+    const drives = [];
+    for (let i = 65; i <= 90; i++) {
+      const letter = String.fromCharCode(i);
+      try {
+        if (fs.statSync(`${letter}:\\`).isDirectory()) {
+          drives.push(`${letter}:\\`);
+        }
+      } catch {}
+    }
+    return drives;
+  }
+  return ['/'];
 });
