@@ -133,7 +133,7 @@
   "devDependencies": {
     "@electron/osx-sign": "^2.5.0",
     "electron": "^43.0.0",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^26.15.3"
   },
   "allowScripts": {
     "@ffmpeg-installer/darwin-arm64@4.1.5": true
