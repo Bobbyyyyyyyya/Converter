@@ -3,3 +3,5 @@ dist/
 .DS_Store
 *.log
 *.env
+build-assets/codesign.p12
+test-files/

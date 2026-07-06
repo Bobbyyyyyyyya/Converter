@@ -134,6 +134,8 @@ ipcMain.handle('select-files', async () => {
       { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'aiff', 'alac', 'ac3', 'amr', 'mp2'] },
       { name: 'Video', extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv', '3gp', 'm4v', 'mpg', 'mpeg', 'ogv', 'ts', 'mts', 'm2ts'] },
       { name: 'Documents', extensions: ['pdf', 'txt', 'docx', 'doc'] },
+      { name: '3D Models', extensions: ['3ds', '3mf', 'ac', 'amf', 'ase', 'b3d', 'blend', 'bvh', 'cob', 'dae', 'dxf', 'fbx', 'gltf', 'glb', 'lwo', 'lxo', 'md2', 'md5mesh', 'mdc', 'mdl', 'ms3d', 'nff', 'obj', 'off', 'ogex', 'ply', 'q3o', 'q3s', 'sib', 'smd', 'stl', 'x', 'xgl', 'zgl'] },
+      { name: 'Animation', extensions: ['lottie'] },
     ],
   });
   return result.canceled ? [] : result.filePaths;

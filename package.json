@@ -1,7 +1,7 @@
 {
   "name": "converter",
-  "version": "1.5.0",
-  "description": "Convert images, audio & video between formats",
+  "version": "1.6.0",
+  "description": "Convert images, audio, video, documents, 3D models & animations",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
   "license": "MIT",
@@ -76,7 +76,8 @@
         }
       ],
       "icon": "build-assets/icon.png",
-      "artifactName": "${name}-${version}-win-${arch}.${ext}"
+      "artifactName": "${name}-${version}-win-${arch}.${ext}",
+      "signDlls": false
     },
     "nsis": {
       "oneClick": false,
@@ -119,9 +120,13 @@
   ],
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "adm-zip": "^0.5.18",
+    "assimpjs": "^0.0.10",
     "electron-updater": "^6.0.0",
     "fluent-ffmpeg": "^2.1.3",
+    "lottie-web": "^5.13.0",
     "mammoth": "^1.12.0",
+    "pdfjs-dist": "^6.1.200",
     "pdfkit": "^0.19.1",
     "sharp": "^0.35.3"
   },

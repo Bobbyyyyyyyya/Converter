@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head><body>
+<script>
+const lottie = require('lottie-web');
+const { ipcRenderer } = require('electron');
+const fs = require('fs');
+const path = require('path');
+
+let rendering = false;
+
+ipcRenderer.on('render-lottie', async (event, msg) => {
+  if (rendering) return;
+  rendering = true;
+
+  const { json, width, height, outputDir, fps } = msg;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  document.body.appendChild(canvas);
+
+  const anim = lottie.loadAnimation({
+    animationData: json,
+    renderer: 'canvas',
+    loop: false,
+    autoplay: false,
+  });
+
+  await new Promise((r) => { anim.addEventListener('DOMLoaded', r); });
+
+  const total = Math.floor(anim.totalFrames);
+  const digits = String(total).length;
+
+  for (let i = 0; i < total; i++) {
+    anim.goToAndStop(i, true);
+    const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+    const buf = Buffer.from(await blob.arrayBuffer());
+    fs.writeFileSync(path.join(outputDir, `frame_${String(i).padStart(digits, '0')}.png`), buf);
+    ipcRenderer.send('lottie-progress', { frame: i, total });
+  }
+
+  anim.destroy();
+  rendering = false;
+  ipcRenderer.send('lottie-render-done');
+});
+</script>
+</body></html>

@@ -29,7 +29,7 @@
         <img src="build-assets/icon-32.png" alt="Converter" width="32" height="32" style="border-radius:8px" />
         <h1>Converter</h1>
       </div>
-      <p class="subtitle">Convert images, audio, video & documents in seconds</p>
+      <p class="subtitle">Convert images, audio, video, documents, 3D models & animations in seconds</p>
     </header>
 
     <main class="main">
@@ -48,7 +48,8 @@
             <span>Audio</span>
             <span>Video</span>
             <span>Document</span>
-            <span>PDF</span>
+            <span>3D Model</span>
+            <span>Animation</span>
             <span>HEIC</span>
           </div>
         </div>
@@ -142,7 +143,7 @@
           <section>
             <h3>How to use</h3>
             <ol>
-              <li>Drop or click to select files (images, audio, or video)</li>
+              <li>Drop or click to select files (images, audio, video, documents, or 3D models)</li>
               <li>Choose a target format from the dropdown</li>
               <li>Pick an output folder</li>
               <li>Click <strong>Convert</strong></li>
@@ -166,18 +167,32 @@
               <strong>Document</strong>
               <span>PDF, TXT, DOCX, DOC</span>
             </div>
+            <div class="format-group">
+              <strong>3D Model</strong>
+              <span>3DS, 3MF, AC, AMF, ASE, B3D, BLEND, BVH, COB, Collada (DAE), DXF, FBX, GLTF, GLB, LWO, MD2, MD5Mesh, MDC, MDL, MS3D, NFF, OBJ, OFF, Ogex, PLY, Q3O, SIB, SMD, STL, X, XGL</span>
+            </div>
+            <div class="format-group">
+              <strong>Game Engine</strong>
+              <span>FBX, OBJ, MD5, SMD, B3D, MDL, MD2, MD3, 3DS, X, DXF + many more via assimp</span>
+            </div>
+            <div class="format-group">
+              <strong>Animation</strong>
+              <span>Lottie (.lottie), SVG, APNG, Animated WebP</span>
+            </div>
           </section>
           <section>
             <h3>Tips</h3>
             <ul>
               <li>Hold <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> to select multiple files</li>
+              <li>3D models can be converted to GLTF, GLB, or STL</li>
+              <li>Lottie animations can be converted to MP4, GIF, or WEBP</li>
               <li>Documents (PDF, TXT, DOCX) can be converted to PDF or TXT</li>
               <li>Large video files may take longer to convert</li>
               <li>Output files are saved in your chosen folder</li>
             </ul>
           </section>
           <section class="modal-footer-text">
-            <p>Converter v<span id="modalVersion">1.0.0</span> &mdash; Built with Electron, sharp &amp; FFmpeg</p>
+            <p>Converter v<span id="modalVersion">1.0.0</span> &mdash; Built with Electron, sharp, FFmpeg &amp; assimp</p>
           </section>
         </div>
       </div>

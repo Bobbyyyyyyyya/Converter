@@ -189,6 +189,8 @@ function getFileEmoji(type, ext) {
     case 'image': return '🖼';
     case 'audio': return '🎵';
     case 'video': return '🎬';
+    case 'model3d': return '🧊';
+    case 'animation': return '✨';
     default: return '📄';
   }
 }
@@ -199,6 +201,8 @@ function getFileTypeClass(type, ext) {
     case 'image': return 'image';
     case 'audio': return 'audio';
     case 'video': return 'video';
+    case 'model3d': return 'model3d';
+    case 'animation': return 'animation';
     default: return '';
   }
 }
@@ -210,7 +214,7 @@ function updateTargetFormatOptions() {
   const commonTypes = new Set(selectedFiles.map((f) => f.type));
   const commonTargets = commonTypes.size === 1
     ? getTargetsForType(selectedFiles[0].type)
-    : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'jp2', '3gp', 'mpg', 'pdf', 'txt'];
+    : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'jp2', '3gp', 'mpg', 'pdf', 'txt', 'gltf', 'glb', 'stl'];
 
   const seen = new Set();
   for (const fmt of commonTargets) {
@@ -230,6 +234,8 @@ function getTargetsForType(type) {
     case 'audio': return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'aiff', 'ac3', 'mp2'];
     case 'video': return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif', '3gp', 'm4v', 'mpg', 'ogv', 'ts'];
     case 'document': return ['pdf', 'txt'];
+    case 'model3d': return ['gltf', 'glb', 'stl'];
+    case 'animation': return ['mp4', 'gif', 'webp'];
     default: return [];
   }
 }

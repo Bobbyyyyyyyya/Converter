@@ -478,6 +478,8 @@ body {
 .file-list li .file-icon.audio { background: rgba(168, 85, 247, 0.1); }
 .file-list li .file-icon.video { background: rgba(59, 130, 246, 0.1); }
 .file-list li .file-icon.document { background: rgba(239, 68, 68, 0.1); }
+.file-list li .file-icon.model3d { background: rgba(34, 211, 238, 0.1); }
+.file-list li .file-icon.animation { background: rgba(250, 204, 21, 0.1); }
 
 .file-list li .file-name {
   flex: 1;
