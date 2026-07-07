@@ -99,9 +99,7 @@ function openPlayerWindow() {
   });
 
   playerWindow.loadFile('player.html');
-  if (process.argv.includes('--dev')) {
-    playerWindow.webContents.openDevTools();
-  }
+  playerWindow.webContents.openDevTools();
   playerWindow.on('closed', () => { playerWindow = null; });
 }
 
