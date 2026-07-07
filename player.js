@@ -59,10 +59,30 @@ const clearRecentBtn = document.getElementById('clearRecentBtn');
   loadSidebarDirs(platform);
 })();
 
+// ---- Player minimize/restore ----
+function minimizePlayer() {
+  playerStage.style.display = 'none';
+  fileBrowser.style.display = '';
+  emptyState.style.display = 'none';
+  if (viewMode === 'recent') recentView.style.display = '';
+}
+
+function restorePlayer() {
+  if (playerControls.style.display === 'flex') {
+    playerStage.style.display = 'flex';
+    fileBrowser.style.display = 'none';
+    recentView.style.display = 'none';
+    emptyState.style.display = 'none';
+  }
+}
+
+playerFilename.addEventListener('click', restorePlayer);
+
 // ---- Sidebar ----
 sidebarHome.addEventListener('click', () => {
   setActiveSidebar(sidebarHome);
   viewMode = 'home';
+  minimizePlayer();
   window.player.getHomeDir().then((home) => {
     currentPath = home;
     loadDirectory(home);
@@ -72,21 +92,21 @@ sidebarHome.addEventListener('click', () => {
 sidebarRecent.addEventListener('click', () => {
   setActiveSidebar(sidebarRecent);
   viewMode = 'recent';
-  fileBrowser.style.display = 'none';
-  recentView.style.display = '';
-  emptyState.style.display = 'none';
+  minimizePlayer();
   loadRecent();
 });
 
 sidebarMusic.addEventListener('click', () => {
   setActiveSidebar(sidebarMusic);
   viewMode = 'browse';
+  minimizePlayer();
   filterFiles('audio');
 });
 
 sidebarVideo.addEventListener('click', () => {
   setActiveSidebar(sidebarVideo);
   viewMode = 'browse';
+  minimizePlayer();
   filterFiles('video');
 });
 
@@ -125,6 +145,7 @@ async function loadSidebarDirs(platform) {
       currentPath = d.path;
       setActiveSidebar(null);
       viewMode = 'browse';
+      minimizePlayer();
       loadDirectory(d.path);
     });
     sidebarDirList.appendChild(btn);
@@ -162,6 +183,7 @@ function renderBreadcrumb(dirPath) {
   homeItem.className = 'breadcrumb-item';
   homeItem.textContent = 'Home';
   homeItem.addEventListener('click', () => {
+    minimizePlayer();
     window.player.getHomeDir().then((h) => {
       currentPath = h;
       loadDirectory(h);
@@ -180,6 +202,7 @@ function renderBreadcrumb(dirPath) {
     item.className = 'breadcrumb-item';
     item.textContent = part;
     item.addEventListener('click', () => {
+      minimizePlayer();
       currentPath = accum;
       loadDirectory(accum);
     });
