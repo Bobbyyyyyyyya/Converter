@@ -382,7 +382,6 @@ async function loadMedia(filePath) {
 
   isPlaying = false;
   updatePlayBtn();
-  playerVideo.play().catch(() => {});
 }
 
 function updateProgress() {

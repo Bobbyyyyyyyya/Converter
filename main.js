@@ -22,7 +22,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: false,
+      webSecurity: true,
       allowFileAccess: true,
     },
   });
@@ -93,7 +93,7 @@ function openPlayerWindow() {
       preload: path.join(__dirname, 'player-preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: false,
+      webSecurity: true,
       allowFileAccess: true,
     },
   });
