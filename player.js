@@ -17,10 +17,12 @@ const loading = document.getElementById('loading');
 const breadcrumb = document.getElementById('breadcrumb');
 const sidebarDirList = document.getElementById('sidebarDirList');
 
+const playerStage = document.getElementById('playerStage');
+const playerStageArt = document.getElementById('playerStageArt');
+const artTitle = document.getElementById('artTitle');
+const artDetail = document.getElementById('artDetail');
 const playerControls = document.getElementById('playerControls');
 const playerVideo = document.getElementById('playerVideo');
-const playerAudioArt = document.getElementById('playerAudioArt');
-const playerVideoWrap = document.getElementById('playerVideoWrap');
 const playerFilename = document.getElementById('playerFilename');
 const playerDetails = document.getElementById('playerDetails');
 
@@ -365,19 +367,28 @@ async function loadMedia(filePath) {
 
   if (info.type === 'unknown') return;
 
-  playerVideo.src = `file://${filePath}`;
-  playerVideo.style.display = isAudio ? 'none' : '';
-  playerAudioArt.style.display = isAudio ? 'flex' : 'none';
-  playerFilename.textContent = filePath.split('/').pop();
-  playerVideoWrap.querySelector('video')?.load();
+  const name = filePath.split('/').pop();
+  const ext = name.split('.').pop().toUpperCase();
 
-  const ext = filePath.split('.').pop().toUpperCase();
-  playerDetails.textContent = `${ext} file`;
+  playerVideo.src = `file://${filePath}`;
+  playerVideo.style.display = isVideo ? '' : 'none';
+  playerStage.style.display = 'flex';
+  playerStage.className = 'player-stage' + (isAudio ? ' player-stage-audio' : '');
+  playerStageArt.style.display = isAudio ? 'flex' : 'none';
+  artTitle.textContent = name;
+  artDetail.textContent = isAudio ? 'Audio  •  ' + ext : '';
+  playerFilename.textContent = name;
+  playerDetails.textContent = isVideo ? ext : 'Audio  •  ' + ext;
   playerControls.style.display = 'flex';
+
+  fileBrowser.style.display = 'none';
+  recentView.style.display = 'none';
+  emptyState.style.display = 'none';
+
+  playerVideo.load();
 
   window.player.addToRecent(filePath);
 
-  // If recent view is open, refresh it
   if (viewMode === 'recent') loadRecent();
 
   isPlaying = false;
@@ -488,6 +499,9 @@ playerCloseBtn.addEventListener('click', () => {
   playerVideo.pause();
   playerVideo.src = '';
   playerControls.style.display = 'none';
+  playerStage.style.display = 'none';
+  fileBrowser.style.display = '';
+  if (viewMode === 'recent') recentView.style.display = '';
   playlist = [];
   playlistIndex = -1;
 });
