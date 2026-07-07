@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "Convert images, audio, video, documents, 3D models & animations",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
@@ -24,10 +24,14 @@
     "files": [
       "main.js",
       "preload.js",
+      "player-preload.js",
       "converter.js",
       "index.html",
+      "player.html",
       "styles.css",
+      "player.css",
       "renderer.js",
+      "player.js",
       "package.json",
       "scripts/**/*",
       "build-assets/**/*",
