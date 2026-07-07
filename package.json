@@ -76,8 +76,7 @@
         }
       ],
       "icon": "build-assets/icon.png",
-      "artifactName": "${name}-${version}-win-${arch}.${ext}",
-      "signDlls": false
+      "artifactName": "${name}-${version}-win-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
