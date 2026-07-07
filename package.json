@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Convert images, audio, video, documents, 3D models & animations",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
