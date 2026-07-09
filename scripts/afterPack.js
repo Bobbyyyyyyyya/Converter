@@ -10,40 +10,39 @@ exports.default = async function (context) {
   const appDir = context.appOutDir;
 
   if (platform === 'darwin') {
-    await stripAllSignatures(appDir, context.packager.appInfo.productName);
+    await signMac(appDir, context.packager.appInfo.productName);
   } else if (platform === 'win32') {
     await signWin(appDir);
   }
 };
 
-async function stripAllSignatures(appDir, appName) {
+async function signMac(appDir, appName) {
   const appPath = [path.join(appDir, `${appName}.app`), path.join(appDir, 'Converter.app')].find(p => fs.existsSync(p));
   if (!appPath) {
     console.log('No .app found in', appDir, 'contents:', fs.readdirSync(appDir));
     return;
   }
 
-  console.log(`\n=== macOS: stripping all ad-hoc signatures from ${appPath} ===`);
+  console.log(`\n=== macOS signing: ${appPath} ===`);
 
   try {
-    execSync(`find "${appPath}" -type f -perm +0111 -exec codesign --remove-signature {} \\; 2>/dev/null`, { stdio: 'inherit' });
+    // Try signing with Apple Development certificate first
+    const identity = 'B453ECCBF27AAC9DB79529E260B23EAF34EEB94F';
+    execSync(`codesign --force --deep --sign "${identity}" "${appPath}"`, { stdio: 'inherit' });
+    console.log('Signed with Apple Development certificate');
   } catch (e) {
-    console.error('Signature stripping failed:', e.message);
+    console.error('Development cert signing failed:', e.message);
+    console.log('Falling back to ad-hoc signing...');
+    try {
+      execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' });
+      console.log('Ad-hoc signing complete');
+    } catch (e2) {
+      console.error('Ad-hoc signing also failed:', e2.message);
+    }
   }
 
-  const mainExe = path.join(appPath, 'Contents', 'MacOS', appName);
-  if (fs.existsSync(mainExe)) {
-    execSync(`codesign --remove-signature "${mainExe}" 2>/dev/null`, { stdio: 'inherit' });
-  }
-
-  console.log('All ad-hoc signatures removed');
-
-  try {
-    execSync(`codesign -dv --verbose=4 "${appPath}" 2>&1`, { stdio: 'inherit' });
-  } catch (e) {
-    console.log('App is now unsigned (expected)');
-  }
-
+  execSync(`xattr -cr "${appPath}"`, { stdio: 'inherit' });
+  execSync(`codesign -dv --verbose=4 "${appPath}" 2>&1`, { stdio: 'inherit' });
   console.log('=== Done ===\n');
 }
 
