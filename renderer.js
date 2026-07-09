@@ -134,6 +134,10 @@ dropZone.addEventListener('mousemove', (e) => {
   dropZone.style.setProperty('--mouse-y', y + '%');
 });
 
+window.converter.onOpenFile((files) => {
+  if (files.length) addFiles(files);
+});
+
 // ---- File Management ----
 
 async function addFiles(paths) {

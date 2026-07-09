@@ -16,4 +16,7 @@ contextBridge.exposeInMainWorld('converter', {
     ipcRenderer.on('update-status', (_event, data) => callback(data));
   },
   openPlayer: () => ipcRenderer.invoke('open-player'),
+  onOpenFile: (callback) => {
+    ipcRenderer.on('open-files', (_event, files) => callback(files));
+  },
 });

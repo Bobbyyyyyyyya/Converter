@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "Convert images, audio, video, documents, 3D models & animations",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
@@ -40,7 +40,29 @@
     "asarUnpack": [
       "node_modules/@ffmpeg-installer/**"
     ],
-    "afterPack": "scripts/afterPack.js",
+    "fileAssociations": [
+      {
+        "ext": ["mp3", "wav", "ogg", "flac", "aac", "m4a", "wma", "opus", "aiff", "alac", "ac3", "amr", "mp2"],
+        "name": "Audio",
+        "description": "Audio files",
+        "role": "Editor",
+        "isPackage": false
+      },
+      {
+        "ext": ["mp4", "avi", "mov", "mkv", "webm", "wmv", "flv", "3gp", "m4v", "mpg", "mpeg", "ogv", "ts", "mts", "m2ts"],
+        "name": "Video",
+        "description": "Video files",
+        "role": "Editor",
+        "isPackage": false
+      },
+      {
+        "ext": ["jpg", "jpeg", "png", "webp", "bmp", "tiff", "gif", "avif", "heic", "heif", "jp2"],
+        "name": "Image",
+        "description": "Image files",
+        "role": "Editor",
+        "isPackage": false
+      }
+    ],
     "mac": {
       "target": [
         {

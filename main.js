@@ -168,9 +168,51 @@ ipcMain.handle('install-update', async () => {
   autoUpdater.quitAndInstall();
 });
 
+let pendingFiles = [];
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, argv) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+
+      const files = argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
+      if (files.length > 0) {
+        mainWindow.webContents.send('open-files', files);
+      }
+    }
+  });
+}
+
+app.on('will-finish-launching', () => {
+  app.on('open-file', (event, filePath) => {
+    event.preventDefault();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('open-files', [filePath]);
+    } else {
+      pendingFiles.push(filePath);
+    }
+  });
+});
+
 app.whenReady().then(() => {
   createWindow();
   setTimeout(() => checkForUpdates(), 3000);
+
+  const fileArgs = process.argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
+  if (fileArgs.length > 0) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.webContents.send('open-files', fileArgs);
+    });
+  }
+
+  if (pendingFiles.length > 0) {
+    mainWindow.webContents.send('open-files', pendingFiles);
+    pendingFiles = [];
+  }
 });
 
 app.on('window-all-closed', () => {
