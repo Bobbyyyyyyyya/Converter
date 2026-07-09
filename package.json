@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.7.10",
+  "version": "1.7.11",
   "description": "Convert images, audio, video, documents, 3D models & animations",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
@@ -18,6 +18,7 @@
   "build": {
     "appId": "com.converter.app",
     "productName": "Converter",
+    "afterPack": "scripts/afterPack.js",
     "directories": {
       "output": "dist"
     },
