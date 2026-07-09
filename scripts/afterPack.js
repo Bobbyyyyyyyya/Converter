@@ -10,42 +10,40 @@ exports.default = async function (context) {
   const appDir = context.appOutDir;
 
   if (platform === 'darwin') {
-    // Skip ad-hoc signing: macOS ad-hoc signing causes "app is damaged" errors.
-    // Without signing, macOS shows "kon niet scannen op malware" which lets users
-    // open the app via right-click → Open.
-    console.log(`\n=== macOS: skipping ad-hoc signing for ${appDir} ===\n`);
+    await stripAllSignatures(appDir, context.packager.appInfo.productName);
   } else if (platform === 'win32') {
     await signWin(appDir);
   }
 };
 
-async function signMac(appDir, appName) {
+async function stripAllSignatures(appDir, appName) {
   const appPath = [path.join(appDir, `${appName}.app`), path.join(appDir, 'Converter.app')].find(p => fs.existsSync(p));
   if (!appPath) {
     console.log('No .app found in', appDir, 'contents:', fs.readdirSync(appDir));
     return;
   }
 
-  console.log(`\n=== macOS ad-hoc signing: ${appPath} ===`);
-
-  const { sign } = require('@electron/osx-sign');
+  console.log(`\n=== macOS: stripping all ad-hoc signatures from ${appPath} ===`);
 
   try {
-    await sign({ app: appPath, identity: '-' });
-    console.log('Ad-hoc signing complete via @electron/osx-sign');
+    execSync(`find "${appPath}" -type f -perm +0111 -exec codesign --remove-signature {} \\; 2>/dev/null`, { stdio: 'inherit' });
   } catch (e) {
-    console.error('@electron/osx-sign failed:', e.message);
-    console.log('Falling back to manual codesign...');
-    try {
-      execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' });
-      console.log('Manual ad-hoc signing complete');
-    } catch (e2) {
-      console.error('Manual codesign also failed:', e2.message);
-    }
+    console.error('Signature stripping failed:', e.message);
   }
 
-  execSync(`xattr -cr "${appPath}"`, { stdio: 'inherit' });
-  execSync(`codesign -dv --verbose=4 "${appPath}" 2>&1`, { stdio: 'inherit' });
+  const mainExe = path.join(appPath, 'Contents', 'MacOS', appName);
+  if (fs.existsSync(mainExe)) {
+    execSync(`codesign --remove-signature "${mainExe}" 2>/dev/null`, { stdio: 'inherit' });
+  }
+
+  console.log('All ad-hoc signatures removed');
+
+  try {
+    execSync(`codesign -dv --verbose=4 "${appPath}" 2>&1`, { stdio: 'inherit' });
+  } catch (e) {
+    console.log('App is now unsigned (expected)');
+  }
+
   console.log('=== Done ===\n');
 }
 
