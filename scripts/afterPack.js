@@ -10,7 +10,10 @@ exports.default = async function (context) {
   const appDir = context.appOutDir;
 
   if (platform === 'darwin') {
-    await signMac(appDir, context.packager.appInfo.productName);
+    // Skip ad-hoc signing: macOS ad-hoc signing causes "app is damaged" errors.
+    // Without signing, macOS shows "kon niet scannen op malware" which lets users
+    // open the app via right-click → Open.
+    console.log(`\n=== macOS: skipping ad-hoc signing for ${appDir} ===\n`);
   } else if (platform === 'win32') {
     await signWin(appDir);
   }

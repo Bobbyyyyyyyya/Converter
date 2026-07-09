@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.7.7",
+  "version": "1.7.8",
   "description": "Convert images, audio, video, documents, 3D models & animations",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
@@ -84,7 +84,8 @@
       "icon": "build-assets/icon.png",
       "artifactName": "${name}-${version}-mac-${arch}.${ext}",
       "gatekeeperAssess": false,
-      "hardenedRuntime": false
+      "hardenedRuntime": false,
+      "identity": null
     },
     "win": {
       "target": [
