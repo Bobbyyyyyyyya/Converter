@@ -393,8 +393,8 @@ async function loadMedia(filePath) {
   const name = filePath.split('/').pop();
   const ext = name.split('.').pop().toUpperCase();
 
-  playerVideo.src = `file://${filePath}`;
-  playerVideo.style.display = isVideo ? '' : 'none';
+  playerVideo.src = new URL('file://' + filePath).href;
+  playerVideo.style.display = isVideo ? 'block' : 'none';
   playerStage.style.display = 'flex';
   playerStage.className = 'player-stage' + (isAudio ? ' player-stage-audio' : '');
   playerStageArt.style.display = isAudio ? 'flex' : 'none';
@@ -407,8 +407,6 @@ async function loadMedia(filePath) {
   fileBrowser.style.display = 'none';
   recentView.style.display = 'none';
   emptyState.style.display = 'none';
-
-  playerVideo.load();
 
   window.player.addToRecent(filePath);
 
