@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld('player', {
   selectFiles: () => ipcRenderer.invoke('select-files'),
   getFormatInfo: (filePath) => ipcRenderer.invoke('get-format-info', filePath),
   getPlatform: () => ipcRenderer.invoke('get-platform'),
+  onOpenMediaFiles: (callback) => ipcRenderer.on('open-media-files', (_event, files) => callback(files)),
 });

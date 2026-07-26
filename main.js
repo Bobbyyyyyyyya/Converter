@@ -100,6 +100,12 @@ function openPlayerWindow() {
 
   playerWindow.loadFile('player.html');
   playerWindow.webContents.openDevTools();
+  playerWindow.webContents.once('did-finish-load', () => {
+    if (pendingPlayerFiles.length > 0) {
+      playerWindow.webContents.send('open-media-files', pendingPlayerFiles);
+      pendingPlayerFiles = [];
+    }
+  });
   playerWindow.on('closed', () => { playerWindow = null; });
 }
 
@@ -168,21 +174,43 @@ ipcMain.handle('install-update', async () => {
   autoUpdater.quitAndInstall();
 });
 
+const MEDIA_EXTENSIONS = new Set([
+  'mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'aiff', 'alac', 'ac3', 'amr', 'mp2',
+  'mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv', '3gp', 'm4v', 'mpg', 'mpeg', 'ogv', 'ts', 'mts', 'm2ts',
+]);
+
+function isMediaFile(filePath) {
+  const ext = path.extname(filePath).toLowerCase().replace('.', '');
+  return MEDIA_EXTENSIONS.has(ext);
+}
+
 let pendingFiles = [];
+let pendingPlayerFiles = [];
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, argv) => {
-    if (mainWindow) {
+    const files = argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
+    if (files.length === 0) return;
+
+    const mediaFiles = files.filter(isMediaFile);
+    const otherFiles = files.filter(f => !isMediaFile(f));
+
+    if (mediaFiles.length > 0) {
+      openPlayerWindow();
+      if (playerWindow && !playerWindow.isDestroyed() && !playerWindow.webContents.isLoading()) {
+        playerWindow.webContents.send('open-media-files', mediaFiles);
+      } else {
+        pendingPlayerFiles.push(...mediaFiles);
+      }
+    }
+
+    if (otherFiles.length > 0 && mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-
-      const files = argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
-      if (files.length > 0) {
-        mainWindow.webContents.send('open-files', files);
-      }
+      mainWindow.webContents.send('open-files', otherFiles);
     }
   });
 }
@@ -190,10 +218,18 @@ if (!gotLock) {
 app.on('will-finish-launching', () => {
   app.on('open-file', (event, filePath) => {
     event.preventDefault();
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('open-files', [filePath]);
+    if (isMediaFile(filePath)) {
+      if (playerWindow && !playerWindow.isDestroyed()) {
+        playerWindow.webContents.send('open-media-files', [filePath]);
+      } else {
+        pendingPlayerFiles.push(filePath);
+      }
     } else {
-      pendingFiles.push(filePath);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('open-files', [filePath]);
+      } else {
+        pendingFiles.push(filePath);
+      }
     }
   });
 });
@@ -204,9 +240,27 @@ app.whenReady().then(() => {
 
   const fileArgs = process.argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
   if (fileArgs.length > 0) {
-    mainWindow.webContents.once('did-finish-load', () => {
-      mainWindow.webContents.send('open-files', fileArgs);
-    });
+    const mediaArgs = fileArgs.filter(isMediaFile);
+    const otherArgs = fileArgs.filter(f => !isMediaFile(f));
+
+    if (mediaArgs.length > 0) {
+      openPlayerWindow();
+      if (playerWindow && !playerWindow.isDestroyed()) {
+        if (playerWindow.webContents.isLoading()) {
+          pendingPlayerFiles.push(...mediaArgs);
+        } else {
+          playerWindow.webContents.send('open-media-files', mediaArgs);
+        }
+      } else {
+        pendingPlayerFiles.push(...mediaArgs);
+      }
+    }
+
+    if (otherArgs.length > 0) {
+      mainWindow.webContents.once('did-finish-load', () => {
+        mainWindow.webContents.send('open-files', otherArgs);
+      });
+    }
   }
 
   if (pendingFiles.length > 0) {

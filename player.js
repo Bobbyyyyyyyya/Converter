@@ -59,6 +59,14 @@ const clearRecentBtn = document.getElementById('clearRecentBtn');
   loadSidebarDirs(platform);
 })();
 
+window.player.onOpenMediaFiles((files) => {
+  if (files.length > 0) {
+    playlist = files;
+    playlistIndex = 0;
+    loadMedia(files[0]);
+  }
+});
+
 // ---- Player minimize/restore ----
 function minimizePlayer() {
   playerStage.style.display = 'none';
