@@ -141,11 +141,11 @@ window.converter.onOpenFile((files) => {
 // ---- File Management ----
 
 async function addFiles(paths) {
+  const infos = await Promise.all(paths.map(p => window.converter.getFormatInfo(p)));
   const newFiles = [];
-  for (const p of paths) {
-    const info = await window.converter.getFormatInfo(p);
-    if (info.type !== 'unknown') {
-      newFiles.push({ path: p, ...info });
+  for (let i = 0; i < paths.length; i++) {
+    if (infos[i].type !== 'unknown') {
+      newFiles.push({ path: paths[i], ...infos[i] });
     }
   }
 
@@ -212,14 +212,17 @@ function getFileTypeClass(type, ext) {
 }
 
 function updateTargetFormatOptions() {
-  targetFormat.innerHTML = '';
-  if (selectedFiles.length === 0) return;
+  if (selectedFiles.length === 0) {
+    targetFormat.innerHTML = '';
+    return;
+  }
 
   const commonTypes = new Set(selectedFiles.map((f) => f.type));
   const commonTargets = commonTypes.size === 1
     ? getTargetsForType(selectedFiles[0].type)
     : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'jp2', '3gp', 'mpg', 'pdf', 'txt', 'gltf', 'glb', 'stl'];
 
+  const fragment = document.createDocumentFragment();
   const seen = new Set();
   for (const fmt of commonTargets) {
     if (!seen.has(fmt)) {
@@ -227,9 +230,11 @@ function updateTargetFormatOptions() {
       const opt = document.createElement('option');
       opt.value = fmt;
       opt.textContent = fmt.toUpperCase();
-      targetFormat.appendChild(opt);
+      fragment.appendChild(opt);
     }
   }
+  targetFormat.innerHTML = '';
+  targetFormat.appendChild(fragment);
 }
 
 function getTargetsForType(type) {
@@ -311,6 +316,7 @@ function showResults(convertResults) {
   results.style.display = 'block';
   resultsList.innerHTML = '';
 
+  const fragment = document.createDocumentFragment();
   let successCount = 0;
   for (const r of convertResults) {
     const li = document.createElement('li');
@@ -328,8 +334,9 @@ function showResults(convertResults) {
         ${name}: ${r.error}
       `;
     }
-    resultsList.appendChild(li);
+    fragment.appendChild(li);
   }
+  resultsList.appendChild(fragment);
 
   resultsSummary.textContent = `${successCount} / ${convertResults.length} files converted successfully`;
 }

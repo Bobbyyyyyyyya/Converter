@@ -54,6 +54,7 @@ const SUPPORTED = {
 };
 
 const TYPE_MAP = {};
+const TARGETS_CACHE = {};
 for (const [type, exts] of Object.entries(SUPPORTED)) {
   for (const ext of exts) TYPE_MAP[ext] = type;
 }
@@ -61,7 +62,7 @@ for (const [type, exts] of Object.entries(SUPPORTED)) {
 function getFormatInfo(filePath) {
   const ext = path.extname(filePath).toLowerCase().replace('.', '');
   const type = TYPE_MAP[ext] || 'unknown';
-  const validTargets = getTargetsForType(type);
+  const validTargets = TARGETS_CACHE[type] || (TARGETS_CACHE[type] = getTargetsForType(type));
   return { ext, type, validTargets };
 }
 

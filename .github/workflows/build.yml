@@ -23,6 +23,9 @@ jobs:
           - os: macos-latest
             arch: arm64
             target: mac-arm64
+          - os: macos-13
+            arch: x64
+            target: mac-x64
           - os: windows-latest
             arch: x64
             target: win-x64
@@ -65,4 +68,9 @@ jobs:
       - name: Upload Windows artifacts
         if: runner.os == 'Windows'
         working-directory: dist
-        run: gh release upload "${{ github.ref_name }}" converter-*-win-x64.exe converter-*-win-x64.exe.blockmap --clobber
+        run: gh release upload "${{ github.ref_name }}" converter-*-win-x64.exe converter-*-win-x64.exe.blockmap latest.yml --clobber
+
+      - name: Upload Linux artifacts
+        if: runner.os == 'Linux'
+        working-directory: dist
+        run: gh release upload "${{ github.ref_name }}" converter-*-linux-x64.AppImage converter-*-linux-x64.deb latest-linux.yml --clobber

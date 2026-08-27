@@ -10,6 +10,7 @@ const RECENT_FILE = path.join(app.getPath('userData'), 'recent-files.json');
 
 autoUpdater.autoDownload = false;
 autoUpdater.logger = null;
+autoUpdater.autoForceDevRunMode = false;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -99,7 +100,6 @@ function openPlayerWindow() {
   });
 
   playerWindow.loadFile('player.html');
-  playerWindow.webContents.openDevTools();
   playerWindow.webContents.once('did-finish-load', () => {
     if (pendingPlayerFiles.length > 0) {
       playerWindow.webContents.send('open-media-files', pendingPlayerFiles);
@@ -125,7 +125,9 @@ function saveRecent(files) {
 }
 
 function sendStatus(status, data) {
-  mainWindow?.webContents.send('update-status', { status, ...data });
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
+    mainWindow.webContents.send('update-status', { status, ...data });
+  }
 }
 
 async function checkForUpdates() {
@@ -133,7 +135,8 @@ async function checkForUpdates() {
   try {
     const result = await autoUpdater.checkForUpdates();
     return result;
-  } catch {
+  } catch (err) {
+    sendStatus('error', { message: err.message || 'Update check failed' });
     return null;
   }
 }
@@ -167,11 +170,19 @@ ipcMain.handle('check-update', async () => {
 });
 
 ipcMain.handle('download-update', async () => {
-  autoUpdater.downloadUpdate();
+  try {
+    await autoUpdater.downloadUpdate();
+  } catch (err) {
+    sendStatus('error', { message: err.message || 'Download failed' });
+  }
 });
 
 ipcMain.handle('install-update', async () => {
-  autoUpdater.quitAndInstall();
+  try {
+    autoUpdater.quitAndInstall();
+  } catch (err) {
+    sendStatus('error', { message: err.message || 'Install failed' });
+  }
 });
 
 const MEDIA_EXTENSIONS = new Set([
@@ -219,7 +230,8 @@ app.on('will-finish-launching', () => {
   app.on('open-file', (event, filePath) => {
     event.preventDefault();
     if (isMediaFile(filePath)) {
-      if (playerWindow && !playerWindow.isDestroyed()) {
+      openPlayerWindow();
+      if (playerWindow && !playerWindow.isDestroyed() && !playerWindow.webContents.isLoading()) {
         playerWindow.webContents.send('open-media-files', [filePath]);
       } else {
         pendingPlayerFiles.push(filePath);
@@ -254,9 +266,7 @@ app.whenReady().then(() => {
       } else {
         pendingPlayerFiles.push(...mediaArgs);
       }
-    }
-
-    if (otherArgs.length > 0) {
+    } else if (otherArgs.length > 0) {
       mainWindow.webContents.once('did-finish-load', () => {
         mainWindow.webContents.send('open-files', otherArgs);
       });
@@ -332,8 +342,15 @@ ipcMain.handle('get-platform', () => {
 
 // ---- Player IPC ----
 
-ipcMain.handle('open-player', () => {
+ipcMain.handle('open-player', (_event, files) => {
   openPlayerWindow();
+  if (files && files.length > 0) {
+    if (playerWindow && !playerWindow.isDestroyed() && !playerWindow.webContents.isLoading()) {
+      playerWindow.webContents.send('open-media-files', files);
+    } else {
+      pendingPlayerFiles.push(...files);
+    }
+  }
 });
 
 ipcMain.handle('read-directory', async (_event, dirPath) => {
