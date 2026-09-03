@@ -92,7 +92,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  animation: slideDown 0.3s ease;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   max-width: 500px;
   width: calc(100% - 32px);
 }
@@ -106,6 +106,15 @@ body {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+}
+
+.update-banner.hiding {
+  animation: slideUpOut 0.22s ease forwards;
+}
+
+@keyframes slideUpOut {
+  from { opacity: 1; transform: translateX(-50%) translateY(0); }
+  to { opacity: 0; transform: translateX(-50%) translateY(-16px); }
 }
 
 .update-banner-inner {
@@ -129,13 +138,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
-.update-icon.downloading {
-  animation: pulse 1.5s ease-in-out infinite;
-}
+.update-icon svg { width: 18px; height: 18px; display: block; }
+
+.update-icon.checking { background: rgba(148, 163, 184, 0.12); color: #94a3b8; }
+.update-icon.available { background: rgba(99, 102, 241, 0.14); color: #818cf8; }
+.update-icon.not-available { background: rgba(34, 197, 94, 0.12); color: #4ade80; }
+.update-icon.downloading { background: rgba(99, 102, 241, 0.14); color: #818cf8; animation: spin 1s linear infinite; }
+.update-icon.downloaded { background: rgba(34, 197, 94, 0.12); color: #4ade80; }
+.update-icon.error { background: rgba(239, 68, 68, 0.1); color: #f87171; }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
@@ -310,6 +324,43 @@ body {
 }
 
 .upload-error strong { color: #fecaca; }
+
+/* Kleine modernisatie — header / cards / interactie verfijnd */
+.app { animation: appFade 0.45s ease; }
+@keyframes appFade { from { opacity: 0; } to { opacity: 1; } }
+
+.header { animation: headerSlide 0.55s cubic-bezier(0.16,1,0.3,1); }
+@keyframes headerSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.logo img { box-shadow: 0 4px 16px rgba(99,102,241,0.18); }
+
+.drop-zone { box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px rgba(0,0,0,0.15); }
+.drop-icon-wrap { animation: floatIcon 3.2s ease-in-out infinite; }
+@keyframes floatIcon { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.drop-zone.drag-over .drop-icon-wrap { animation: none; }
+
+.card { box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.04) inset; }
+.card:hover { border-color: rgba(255,255,255,0.08); }
+
+.file-list li { animation: fileIn 0.3s ease both; }
+.file-list li:nth-child(1) { animation-delay: 0.02s; } .file-list li:nth-child(2) { animation-delay: 0.06s; } .file-list li:nth-child(3) { animation-delay: 0.1s; }
+@keyframes fileIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.progress-bar-fill { position: relative; overflow: hidden; }
+.progress-bar-fill::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transform: translateX(-100%); animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+.btn-primary { position: relative; overflow: hidden; }
+.btn-primary::after {
+  content: ''; position: absolute; inset: 0; opacity: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), transparent);
+  transition: opacity 0.2s;
+}
+.btn-primary:hover::after { opacity: 1; }
 
 /* Card */
 .card {

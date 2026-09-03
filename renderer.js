@@ -47,60 +47,105 @@ helpModal.addEventListener('click', (e) => {
 });
 
 let updateState = null;
+let updateHideTimer = null;
+let updateCheckManual = false;
+
+// SVG iconen voor update banner — professioneel, geen emojis
+const UPDATE_ICONS = {
+  checking: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2.5A6.5 6.5 0 105.5 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M9 5v4l2.5 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  available: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 3.5v9M5.5 8.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 12.5H14.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  success: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 9l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  error: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 6.5l5 5M11.5 6.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  downloading: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2.5A6.5 6.5 0 105.5 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.3"/><path d="M9 2.5A6.5 6.5 0 0115.5 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+};
 
 window.converter.onUpdateStatus((data) => {
   switch (data.status) {
     case 'checking':
-      showUpdate('checking', '⟳', 'Checking for updates...', '');
+      showUpdate('checking', UPDATE_ICONS.checking, 'Checking for updates...', updateCheckManual ? '' : 'Even geduld');
+      updateActions.style.display = 'none';
       break;
     case 'available':
-      showUpdate('available', '⬇', `Update v${data.version} available`, 'Click to download');
+      showUpdate('available', UPDATE_ICONS.available, `Update v${data.version} beschikbaar`, 'Klik om te downloaden');
       updateBtn.textContent = 'Download';
+      updateBtn.disabled = false;
       updateBtn.onclick = () => window.converter.downloadUpdate();
       updateActions.style.display = 'flex';
       break;
     case 'not-available':
-      showUpdate('not-available', '✓', 'You\'re up to date', `v${versionDisplay.textContent} is the latest version`);
+      // Alleen tonen bij handmatige check; auto-check op start blijft stil
+      if (!updateCheckManual) {
+        hideUpdate();
+        updateCheckManual = false;
+        break;
+      }
+      showUpdate('not-available', UPDATE_ICONS.success, 'Je bent up-to-date', `v${versionDisplay.textContent} is de nieuwste versie`);
       updateActions.style.display = 'none';
-      setTimeout(hideUpdate, 3000);
+      scheduleHide(2500);
       break;
     case 'downloading':
+      updateIcon.innerHTML = UPDATE_ICONS.downloading;
       updateIcon.className = 'update-icon downloading';
-      updateTitle.textContent = 'Downloading update...';
+      updateTitle.textContent = 'Update downloaden...';
       updateDesc.textContent = `${data.percent}%`;
       updateBtn.textContent = `${data.percent}%`;
       updateBtn.disabled = true;
+      updateActions.style.display = 'flex';
+      // Niet auto-hiden tijdens download
+      if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
       break;
     case 'downloaded':
-      showUpdate('downloaded', '⬇', 'Update ready to install', 'Restart to apply');
-      updateBtn.textContent = 'Install';
+      showUpdate('downloaded', UPDATE_ICONS.available, 'Update klaar', 'Herstart om te installeren');
+      updateBtn.textContent = 'Installeer';
       updateBtn.disabled = false;
       updateBtn.onclick = () => window.converter.installUpdate();
       updateActions.style.display = 'flex';
       break;
     case 'error':
-      showUpdate('error', '✗', 'Update check failed', data.message);
+      showUpdate('error', UPDATE_ICONS.error, 'Update check mislukt', data.message || 'Probeer later opnieuw');
       updateActions.style.display = 'none';
-      setTimeout(hideUpdate, 4000);
+      scheduleHide(4000);
       break;
+  }
+  // Reset manual flag na not-available/error
+  if (data.status === 'not-available' || data.status === 'error') {
+    setTimeout(() => { updateCheckManual = false; }, 100);
   }
 });
 
-function showUpdate(state, icon, title, desc) {
-  updateIcon.textContent = icon;
-  updateIcon.className = 'update-icon';
+function showUpdate(state, iconSvg, title, desc) {
+  if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
+  updateState = state;
+  updateIcon.innerHTML = iconSvg;
+  updateIcon.className = 'update-icon ' + state;
   updateTitle.textContent = title;
   updateDesc.textContent = desc;
   updateBanner.style.display = 'block';
+  updateBanner.classList.remove('hiding');
+  // A11y
+  updateBanner.setAttribute('aria-live', 'polite');
 }
 
 function hideUpdate() {
-  updateBanner.style.display = 'none';
+  if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
+  if (updateBanner.style.display === 'none') return;
+  updateBanner.classList.add('hiding');
+  setTimeout(() => {
+    updateBanner.style.display = 'none';
+    updateBanner.classList.remove('hiding');
+    updateState = null;
+  }, 220);
+}
+
+function scheduleHide(ms) {
+  if (updateHideTimer) clearTimeout(updateHideTimer);
+  updateHideTimer = setTimeout(hideUpdate, ms);
 }
 
 updateDismiss.addEventListener('click', hideUpdate);
 
 checkUpdateBtn.addEventListener('click', () => {
+  updateCheckManual = true;
   window.converter.checkUpdate();
 });
 
