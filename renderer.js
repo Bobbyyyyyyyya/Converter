@@ -63,14 +63,21 @@ window.converter.onUpdateStatus((data) => {
   switch (data.status) {
     case 'checking':
       showUpdate('checking', UPDATE_ICONS.checking, 'Checking for updates...', updateCheckManual ? '' : 'Even geduld');
-      updateActions.style.display = 'none';
+      updateBtn.style.display = 'none';
+      updateDismiss.style.display = 'flex';
+      updateActions.style.display = 'flex';
+      // Fallback: als updater hangt (geen netwerk), verberg na 7s automatisch
+      scheduleHide(7000);
       break;
     case 'available':
       showUpdate('available', UPDATE_ICONS.available, `Update v${data.version} beschikbaar`, 'Klik om te downloaden');
+      updateBtn.style.display = '';
+      updateDismiss.style.display = 'flex';
       updateBtn.textContent = 'Download';
       updateBtn.disabled = false;
       updateBtn.onclick = () => window.converter.downloadUpdate();
       updateActions.style.display = 'flex';
+      if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
       break;
     case 'not-available':
       // Alleen tonen bij handmatige check; auto-check op start blijft stil
@@ -80,7 +87,9 @@ window.converter.onUpdateStatus((data) => {
         break;
       }
       showUpdate('not-available', UPDATE_ICONS.success, 'Je bent up-to-date', `v${versionDisplay.textContent} is de nieuwste versie`);
-      updateActions.style.display = 'none';
+      updateBtn.style.display = 'none';
+      updateDismiss.style.display = 'flex';
+      updateActions.style.display = 'flex';
       scheduleHide(2500);
       break;
     case 'downloading':
@@ -88,6 +97,8 @@ window.converter.onUpdateStatus((data) => {
       updateIcon.className = 'update-icon downloading';
       updateTitle.textContent = 'Update downloaden...';
       updateDesc.textContent = `${data.percent}%`;
+      updateBtn.style.display = '';
+      updateDismiss.style.display = 'flex';
       updateBtn.textContent = `${data.percent}%`;
       updateBtn.disabled = true;
       updateActions.style.display = 'flex';
@@ -96,14 +107,19 @@ window.converter.onUpdateStatus((data) => {
       break;
     case 'downloaded':
       showUpdate('downloaded', UPDATE_ICONS.available, 'Update klaar', 'Herstart om te installeren');
+      updateBtn.style.display = '';
+      updateDismiss.style.display = 'flex';
       updateBtn.textContent = 'Installeer';
       updateBtn.disabled = false;
       updateBtn.onclick = () => window.converter.installUpdate();
       updateActions.style.display = 'flex';
+      if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
       break;
     case 'error':
       showUpdate('error', UPDATE_ICONS.error, 'Update check mislukt', data.message || 'Probeer later opnieuw');
-      updateActions.style.display = 'none';
+      updateBtn.style.display = 'none';
+      updateDismiss.style.display = 'flex';
+      updateActions.style.display = 'flex';
       scheduleHide(4000);
       break;
   }
