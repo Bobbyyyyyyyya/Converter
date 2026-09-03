@@ -280,6 +280,8 @@ body {
   justify-content: center;
   gap: 8px;
   margin-top: 16px;
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .drop-types span {
@@ -292,7 +294,22 @@ body {
   border: 1px solid var(--border);
   letter-spacing: 0.3px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
+
+.upload-error {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  color: #fca5a5;
+  font-size: 12px;
+  line-height: 1.5;
+  animation: slideUp 0.2s ease;
+}
+
+.upload-error strong { color: #fecaca; }
 
 /* Card */
 .card {
@@ -363,18 +380,43 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  background: var(--surface-active);
+  background: #1f1f2e;
   color: var(--text);
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
   transition: border-color 0.2s;
   outline: none;
+  color-scheme: dark;
 }
 
 .select-wrap select:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  background: #25253a;
+}
+
+/* Windows fix: wit-op-wit in native dropdown (Chromium/Win gebruikt light popup) */
+.select-wrap select option,
+.select-wrap select optgroup {
+  background: #1e1e2e;
+  color: #e4e4e7;
+}
+
+.select-wrap select option:checked,
+.select-wrap select option:hover {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+/* High contrast / forced colors fallback */
+@media (forced-colors: active) {
+  .select-wrap select {
+    forced-color-adjust: none;
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
 }
 
 .select-arrow {
@@ -472,14 +514,18 @@ body {
   height: 28px;
   border-radius: 6px;
   background: rgba(99, 102, 241, 0.08);
+  color: #818cf8;
 }
 
-.file-list li .file-icon.image { background: rgba(34, 197, 94, 0.1); }
-.file-list li .file-icon.audio { background: rgba(168, 85, 247, 0.1); }
-.file-list li .file-icon.video { background: rgba(59, 130, 246, 0.1); }
-.file-list li .file-icon.document { background: rgba(239, 68, 68, 0.1); }
-.file-list li .file-icon.model3d { background: rgba(34, 211, 238, 0.1); }
-.file-list li .file-icon.animation { background: rgba(250, 204, 21, 0.1); }
+.file-list li .file-icon svg { width: 16px; height: 16px; display: block; }
+
+.file-list li .file-icon.image { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
+.file-list li .file-icon.audio { background: rgba(168, 85, 247, 0.1); color: #c084fc; }
+.file-list li .file-icon.video { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+.file-list li .file-icon.document { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+.file-list li .file-icon.model3d { background: rgba(34, 211, 238, 0.1); color: #22d3ee; }
+.file-list li .file-icon.archive { background: rgba(251, 146, 60, 0.12); color: #fb923c; }
+.file-list li .file-icon.animation { background: rgba(250, 204, 21, 0.1); color: #facc15; }
 
 .file-list li .file-name {
   flex: 1;

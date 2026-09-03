@@ -1,4 +1,5 @@
 const dropZone = document.getElementById('dropZone');
+const uploadError = document.getElementById('uploadError');
 const controls = document.getElementById('controls');
 const fileList = document.getElementById('fileList');
 const fileCount = document.getElementById('fileCount');
@@ -122,7 +123,31 @@ dropZone.addEventListener('dragleave', () => {
 dropZone.addEventListener('drop', async (e) => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  const paths = Array.from(e.dataTransfer.files).map((f) => f.path);
+  // Electron provides .path, fallback to webUtils if needed
+  const files = Array.from(e.dataTransfer.files);
+  const paths = [];
+  for (const f of files) {
+    if (f.path) {
+      paths.push(f.path);
+    } else {
+      // Fallback for browsers where path is not available - try getPathForFile (Electron)
+      try {
+        const p = window.electron?.webUtils?.getPathForFile?.(f) || window.converter?.getPathForFile?.(f);
+        if (p) paths.push(p);
+        else paths.push(f.name); // will be unknown but show error
+      } catch {
+        paths.push(f.name);
+      }
+    }
+  }
+  // If single directory dropped, inform user
+  if (paths.length === 1) {
+    const info = await window.converter.getFormatInfo(paths[0]);
+    if (info.type === 'unknown' && !paths[0].includes('.')) {
+      showUploadError(`<strong>Map gedropt:</strong> Sleep bestanden direct, geen mappen. Tip: open de map en selecteer GIF/RAW/Audio bestanden tegelijk (Ctrl/Cmd).`);
+      return;
+    }
+  }
   if (paths.length) addFiles(paths);
 });
 
@@ -135,23 +160,55 @@ dropZone.addEventListener('mousemove', (e) => {
 });
 
 window.converter.onOpenFile((files) => {
-  if (files.length) addFiles(files);
+  if (files.length) addFiles(files, true);
 });
 
 // ---- File Management ----
 
-async function addFiles(paths) {
+function showUploadError(msg) {
+  if (!uploadError) return;
+  uploadError.innerHTML = msg;
+  uploadError.style.display = 'block';
+  setTimeout(() => { uploadError.style.display = 'none'; }, 6000);
+}
+function hideUploadError() {
+  if (uploadError) uploadError.style.display = 'none';
+}
+
+async function addFiles(paths, silent = false) {
+  // Filter out directories / non-files silently - main process already does, but double-check
   const infos = await Promise.all(paths.map(p => window.converter.getFormatInfo(p)));
   const newFiles = [];
+  const unknownFiles = [];
   for (let i = 0; i < paths.length; i++) {
     if (infos[i].type !== 'unknown') {
       newFiles.push({ path: paths[i], ...infos[i] });
+    } else {
+      unknownFiles.push(paths[i]);
     }
   }
 
   if (newFiles.length === 0) {
-    alert('No supported files found.');
+    // Only show error if user explicitly picked files (not silent open-file on startup)
+    if (!silent) {
+      const hasInterestingExt = unknownFiles.some(p => {
+        const ext = p.split('.').pop().toLowerCase();
+        return ext.length <= 5 && ext.length >= 2;
+      });
+      if (hasInterestingExt) {
+        const names = unknownFiles.slice(0,3).map(p => p.split(/[\\/]/).pop()).join(', ');
+        const more = unknownFiles.length > 3 ? ` +${unknownFiles.length-3} meer` : '';
+        showUploadError(`<strong>Geen ondersteunde bestanden:</strong> ${names}${more} — check of het bestand niet corrupt is. Ondersteund: GIF, RAW (CR2/NEF/ARW/DNG), Audio (MP3/WAV/FLAC/WV), Video, SKP etc.`);
+      }
+    }
     return;
+  }
+  // If some files were unknown but others were OK, inform user but still add the good ones
+  if (unknownFiles.length > 0 && !silent) {
+    const names = unknownFiles.slice(0,2).map(p => p.split(/[\\/]/).pop()).join(', ');
+    showUploadError(`<strong>${unknownFiles.length} bestand(en) overgeslagen:</strong> ${names} — niet ondersteund of corrupt. ${newFiles.length} bestand(en) toegevoegd.`);
+  } else {
+    hideUploadError();
   }
 
   selectedFiles = [...selectedFiles, ...newFiles];
@@ -169,9 +226,10 @@ function renderFileList() {
   selectedFiles.forEach((f, i) => {
     const li = document.createElement('li');
     const typeClass = getFileTypeClass(f.type, f.ext);
+    const displayName = f.path.split(/[\\/]/).pop();
     li.innerHTML = `
-      <span class="file-icon ${typeClass}">${getFileEmoji(f.type, f.ext)}</span>
-      <span class="file-name">${f.path.split('/').pop()}</span>
+      <span class="file-icon ${typeClass}">${getFileIcon(f.type, f.ext)}</span>
+      <span class="file-name" title="${f.path}">${displayName}</span>
       <span class="file-ext">${f.ext}</span>
       <button class="file-remove" data-index="${i}">×</button>
     `;
@@ -187,20 +245,27 @@ function renderFileList() {
   });
 }
 
-function getFileEmoji(type, ext) {
-  if (type === 'document' || ext === 'pdf') return '📄';
-  switch (type) {
-    case 'image': return '🖼';
-    case 'audio': return '🎵';
-    case 'video': return '🎬';
-    case 'model3d': return '🧊';
-    case 'animation': return '✨';
-    default: return '📄';
-  }
+function getFileIcon(type, ext) {
+  // Professionele SVG iconen — geen emojis
+  const svg = {
+    image: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.2" y="3" width="11.6" height="9.5" rx="1.3" stroke="currentColor" stroke-width="1.4"/><circle cx="6" cy="7" r="1.3" stroke="currentColor" stroke-width="1.2"/><path d="M2.8 10.8L5 8.4l2.4 2.4 1.8-1.6 3 2.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    audio: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 11.8V4.8L12 3.6V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="11.8" r="1.6" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="11.2" r="1.6" stroke="currentColor" stroke-width="1.3"/></svg>',
+    video: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="4" width="11" height="8" rx="1.4" stroke="currentColor" stroke-width="1.4"/><path d="M6.8 7.2L10.8 9 6.8 10.8V7.2z" fill="currentColor"/></svg>',
+    document: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 2H9.2L12.4 5V13.2a1 1 0 01-1 1H6a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M9.2 2.4V5H12" stroke="currentColor" stroke-width="1.2"/><path d="M6 8.6h4.8M6 11h4.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    model3d: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.6L2.8 5.9v5.2L8 14.4l5.2-3.3V5.9L8 2.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M2.8 5.9L8 9l5.2-3.1M8 9v5.4" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+    archive: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3.5H10L13 6V13.5a1 1 0 01-1 1H3a1 1 0 01-1-1V4.5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.4"/><path d="M10 3.5V6H13" stroke="currentColor" stroke-width="1.2"/><path d="M5 9H11M5 11H11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M3 7.5h10" stroke="currentColor" stroke-width="1" opacity="0.35"/></svg>',
+    animation: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.7l1 3H12.2l-2.6 1.9 1 3-2.6-1.9-2.6 1.9 1-3L4 5.7h3.1L8 2.7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
+    folder: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 4.2H6.2l1.6 1.6H13.5V12.5a1 1 0 01-1 1H2.5a1 1 0 01-1-1V5.2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 7.5h11" stroke="currentColor" stroke-width="1" opacity="0.35"/></svg>'
+  };
+  if (ext === 'folder' || type === 'folder') return svg.folder;
+  if (type === 'archive') return svg.archive;
+  if (type === 'document' || ext === 'pdf') return svg.document;
+  return svg[type] || svg.document;
 }
 
 function getFileTypeClass(type, ext) {
   if (type === 'document' || ext === 'pdf') return 'document';
+  if (type === 'archive') return 'archive';
   switch (type) {
     case 'image': return 'image';
     case 'audio': return 'audio';
@@ -217,10 +282,25 @@ function updateTargetFormatOptions() {
     return;
   }
 
+  // GIF special handling: if any gif in selection, show combined targets
+  const hasGif = selectedFiles.some(f => f.ext === 'gif');
   const commonTypes = new Set(selectedFiles.map((f) => f.type));
-  const commonTargets = commonTypes.size === 1
-    ? getTargetsForType(selectedFiles[0].type)
-    : ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'jp2', '3gp', 'mpg', 'pdf', 'txt', 'gltf', 'glb', 'stl'];
+  let commonTargets;
+  if (hasGif && commonTypes.size === 1 && selectedFiles[0].ext === 'gif') {
+    // GIF can go to image + video
+    commonTargets = [...new Set([...getTargetsForType('image'), ...getTargetsForType('video'), 'apng', 'avif'])];
+  } else if (commonTypes.size === 1) {
+    // Use per-file targets for accurate per-ext handling (gif logic inside getTargetsForType)
+    const first = selectedFiles[0];
+    if (first.ext === 'gif' && typeof window.converter !== 'undefined') {
+      // Will be handled via getFormatInfo validTargets, fallback to combined
+      commonTargets = [...new Set([...getTargetsForType('image'), ...getTargetsForType('video')])];
+    } else {
+      commonTargets = getTargetsForType(first.type);
+    }
+  } else {
+    commonTargets = ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'apng', 'jxl', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'heif', 'jp2', '3gp', 'mpg', 'pdf', 'txt', 'html', 'md', 'csv', 'json', 'gltf', 'glb', 'stl', 'obj', 'ply', 'fbx', 'dae', 'skp', 'dxf', 'usd', 'ifc', 'zip', 'tar', 'gz', '7z'];
+  }
 
   const fragment = document.createDocumentFragment();
   const seen = new Set();
@@ -239,11 +319,12 @@ function updateTargetFormatOptions() {
 
 function getTargetsForType(type) {
   switch (type) {
-    case 'image': return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'jp2', 'pdf'];
-    case 'audio': return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'opus', 'aiff', 'ac3', 'mp2'];
-    case 'video': return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif', '3gp', 'm4v', 'mpg', 'ogv', 'ts'];
-    case 'document': return ['pdf', 'txt'];
-    case 'model3d': return ['gltf', 'glb', 'stl'];
+    case 'image': return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'heif', 'jp2', 'jxl', 'apng', 'pdf', 'ico'];
+    case 'audio': return ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'm4b', 'opus', 'aiff', 'ac3', 'mp2', 'wv', 'mka'];
+    case 'video': return ['mp4', 'avi', 'mov', 'mkv', 'webm', 'gif', 'webp', 'apng', '3gp', 'm4v', 'mpg', 'ogv', 'ts', 'hevc', 'mxf'];
+    case 'document': return ['pdf', 'txt', 'html', 'md', 'csv', 'json', 'rtf'];
+    case 'model3d': return ['gltf', 'glb', 'stl', 'obj', 'ply', 'fbx', 'dae', 'dxf', 'usd', 'ifc', '3dm', 'step'];
+    case 'archive': return ['zip', 'tar', 'tgz', 'gz', 'bz2', 'xz', '7z', 'jar'];
     case 'animation': return ['mp4', 'gif', 'webp'];
     default: return [];
   }
@@ -295,7 +376,7 @@ convertBtn.addEventListener('click', async () => {
 
   window.converter.onProgress(({ file, progress }) => {
     progressFill.style.width = progress + '%';
-    const name = file.split('/').pop();
+    const name = file.split(/[\\/]/).pop();
     progressText.textContent = `Converting ${name}... ${progress}%`;
   });
 
@@ -320,18 +401,18 @@ function showResults(convertResults) {
   let successCount = 0;
   for (const r of convertResults) {
     const li = document.createElement('li');
-    const name = r.file.split('/').pop();
+    const name = r.file.split(/[\\/]/).pop();
     if (r.success) {
       successCount++;
       li.innerHTML = `
-        <span class="success">✓</span>
-        ${name}
-        <span class="file-path">→ ${r.outputPath.split('/').pop()}</span>
+        <span class="success"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3 7l2.5 2.5L11 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>${name}</span>
+        <span class="file-path">→ ${r.outputPath.split(/[\\/]/).pop()}</span>
       `;
     } else {
       li.innerHTML = `
-        <span class="error">✗</span>
-        ${name}: ${r.error}
+        <span class="error"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M4 4l6 6M10 4L4 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+        <span>${name}: ${r.error}</span>
       `;
     }
     fragment.appendChild(li);

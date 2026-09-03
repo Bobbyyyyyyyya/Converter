@@ -198,12 +198,28 @@ function isMediaFile(filePath) {
 let pendingFiles = [];
 let pendingPlayerFiles = [];
 
+function isFile(filePath) {
+  try { return fs.statSync(filePath).isFile(); } catch { return false; }
+}
+
+function isSupportedFile(filePath) {
+  try {
+    if (!isFile(filePath)) return false;
+    // Exclude the executable itself and main.js etc.
+    if (filePath === process.execPath) return false;
+    if (filePath.endsWith('main.js')) return false;
+    const info = getFormatInfo(filePath);
+    return info.type !== 'unknown';
+  } catch { return false; }
+}
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, argv) => {
-    const files = argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
+    const raw = argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
+    const files = raw.filter(isSupportedFile);
     if (files.length === 0) return;
 
     const mediaFiles = files.filter(isMediaFile);
@@ -229,6 +245,7 @@ if (!gotLock) {
 app.on('will-finish-launching', () => {
   app.on('open-file', (event, filePath) => {
     event.preventDefault();
+    if (!isSupportedFile(filePath)) return;
     if (isMediaFile(filePath)) {
       openPlayerWindow();
       if (playerWindow && !playerWindow.isDestroyed() && !playerWindow.webContents.isLoading()) {
@@ -250,7 +267,8 @@ app.whenReady().then(() => {
   createWindow();
   setTimeout(() => checkForUpdates(), 3000);
 
-  const fileArgs = process.argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
+  const rawArgs = process.argv.slice(1).filter(a => !a.startsWith('-') && fs.existsSync(a));
+  const fileArgs = rawArgs.filter(isSupportedFile);
   if (fileArgs.length > 0) {
     const mediaArgs = fileArgs.filter(isMediaFile);
     const otherArgs = fileArgs.filter(f => !isMediaFile(f));
@@ -273,10 +291,12 @@ app.whenReady().then(() => {
     }
   }
 
-  if (pendingFiles.length > 0) {
-    mainWindow.webContents.send('open-files', pendingFiles);
-    pendingFiles = [];
+  // Only send pendingFiles that are still supported
+  const validPending = pendingFiles.filter(isSupportedFile);
+  if (validPending.length > 0) {
+    mainWindow.webContents.send('open-files', validPending);
   }
+  pendingFiles = [];
 });
 
 app.on('window-all-closed', () => {
@@ -294,12 +314,15 @@ ipcMain.handle('select-files', async () => {
     properties: ['openFile', 'multiSelections'],
     filters: [
       { name: 'All Files', extensions: ['*'] },
-      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'heif', 'jp2', 'pdf'] },
-      { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'aiff', 'alac', 'ac3', 'amr', 'mp2'] },
-      { name: 'Video', extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv', '3gp', 'm4v', 'mpg', 'mpeg', 'ogv', 'ts', 'mts', 'm2ts'] },
-      { name: 'Documents', extensions: ['pdf', 'txt', 'docx', 'doc'] },
-      { name: '3D Models', extensions: ['3ds', '3mf', 'ac', 'amf', 'ase', 'b3d', 'blend', 'bvh', 'cob', 'dae', 'dxf', 'fbx', 'gltf', 'glb', 'lwo', 'lxo', 'md2', 'md5mesh', 'mdc', 'mdl', 'ms3d', 'nff', 'obj', 'off', 'ogex', 'ply', 'q3o', 'q3s', 'sib', 'smd', 'stl', 'x', 'xgl', 'zgl'] },
-      { name: 'Animation', extensions: ['lottie'] },
+      { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif', 'heic', 'heif', 'jp2', 'jxl', 'apng', 'svg', 'psd', 'ico', 'hdr', 'exr', 'tga', 'dds', 'ppm', 'pgm', 'pbm', 'pnm', 'cr2', 'cr3', 'nef', 'arw', 'dng', 'raf', 'orf', 'rw2'] },
+      { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'm4b', 'wma', 'opus', 'aiff', 'aif', 'alac', 'ac3', 'amr', 'mp2', 'wv', 'mka', 'caf', 'dts'] },
+      { name: 'Video', extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'wmv', 'flv', '3gp', 'm4v', 'mpg', 'mpeg', 'ogv', 'ts', 'mts', 'm2ts', 'm2v', 'mxf', 'hevc', 'h264', 'h265', 'gif', 'webp', 'apng'] },
+      { name: 'Documents', extensions: ['pdf', 'txt', 'docx', 'doc', 'rtf', 'html', 'htm', 'md', 'markdown', 'csv', 'json', 'xml', 'yaml', 'yml', 'epub', 'odt', 'ods', 'odp', 'xls', 'xlsx', 'ppt', 'pptx'] },
+      { name: 'Archives', extensions: ['zip', 'jar', 'war', 'ear', 'apk', 'aab', 'tar', 'tgz', 'gz', 'bz2', 'xz', '7z', 'rar', 'cab', 'iso'] },
+      { name: 'SketchUp', extensions: ['skp', 'skb'] },
+      { name: '3D Models & CAD', extensions: ['3ds', '3mf', 'ac', 'amf', 'ase', 'assbin', 'b3d', 'blend', 'bvh', 'cob', 'csm', 'dae', 'dxf', 'dwg', 'dwf', 'dwfx', 'fbx', 'gltf', 'glb', 'hmp', 'ifc', '3dm', 'step', 'stp', 'iges', 'igs', 'usd', 'usda', 'usdc', 'usdz', 'vrm', 'x', 'x3d', 'skp', 'skb', 'lwo', 'lxo', 'md2', 'md3', 'md5mesh', 'mdc', 'mdl', 'ms3d', 'nff', 'obj', 'off', 'ogex', 'ply', 'pmx', 'q3o', 'q3s', 'sib', 'smd', 'stl', 'xgl', 'zgl', 'brep', 'c4d'] },
+      { name: 'AutoCAD', extensions: ['dwg', 'dxf', 'dwf', 'dwfx'] },
+      { name: 'Animation', extensions: ['lottie', 'gif', 'webp', 'json'] },
     ],
   });
   return result.canceled ? [] : result.filePaths;

@@ -30,13 +30,13 @@
         <img src="build-assets/icon-32.png" alt="Converter" width="32" height="32" style="border-radius:8px" />
         <h1>Converter</h1>
       </div>
-      <p class="subtitle">Convert images, audio, video, documents, 3D models & animations in seconds</p>
+      <p class="subtitle">Convert images, GIF, audio, video, documents, AutoCAD, SketchUp & 3D models in seconds</p>
     </header>
 
     <main class="main">
       <!-- Convert Mode -->
       <div id="convertMode">
-        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone" id="dropZone">
           <div class="drop-zone-content">
             <div class="drop-icon-wrap">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
@@ -45,18 +45,24 @@
               </svg>
             </div>
             <p class="drop-text">Drop files here</p>
-            <p class="drop-hint">or click to browse</p>
+            <p class="drop-hint">or click to browse — GIF, RAW (CR2/NEF/ARW/DNG), Audio, Video, SKP</p>
             <div class="drop-types">
               <span>Image</span>
+              <span>GIF</span>
+              <span>RAW</span>
               <span>Audio</span>
               <span>Video</span>
               <span>Document</span>
-              <span>3D Model</span>
-              <span>Animation</span>
-              <span>HEIC</span>
+              <span>Archive</span>
+              <span>ZIP</span>
+              <span>CAD</span>
+              <span>DWG</span>
+              <span>SketchUp</span>
+              <span>3D</span>
             </div>
           </div>
         </div>
+        <div id="uploadError" class="upload-error" style="display:none"></div>
 
         <div class="card controls" id="controls" style="display:none">
           <div class="card-header">
@@ -158,8 +164,8 @@
           <section>
             <h3>How to use</h3>
             <ol>
-              <li>Drop or click to select files (images, audio, video, documents, or 3D models)</li>
-              <li>Choose a target format from the dropdown</li>
+              <li>Drop or click to select files (images, GIF, audio, video, documents, AutoCAD/DWG/DXF, 3D models)</li>
+              <li>Choose a target format from the dropdown (GIF keep animation via FFmpeg)</li>
               <li>Pick an output folder</li>
               <li>Click <strong>Convert</strong></li>
             </ol>
@@ -168,46 +174,72 @@
             <h3>Supported formats</h3>
             <div class="format-group">
               <strong>Image</strong>
-              <span>AVIF, BMP, GIF, HEIC, JPEG, JP2, JPEG XL, PDF, PNG, RAW (CR2/NEF/ARW/DNG), TIFF, WEBP, SVG</span>
+              <span>JPEG, PNG, WEBP, BMP, TIFF, GIF (animated + static), AVIF, HEIC/HEIF, JP2, JXL, APNG, SVG, PSD, ICO, HDR/EXR, TGA/DDS, RAW (CR2/CR3/NEF/ARW/DNG/RAF/ORF/RW2...), PPM/PGM/PBM</span>
+            </div>
+            <div class="format-group">
+              <strong>GIF special</strong>
+              <span>GIF ↔ MP4/WEBM/MOV/AVI/MKV, GIF ↔ WEBP/APNG/JXL, GIF optimalisatie, video → GIF met palette</span>
             </div>
             <div class="format-group">
               <strong>Audio</strong>
-              <span>AAC, AIFF, FLAC, M4A, MP3, OPUS, Vorbis (OGG), WAV, WMA</span>
+              <span>MP3, WAV, OGG, FLAC, AAC/M4A/M4B, WMA, OPUS, AIFF, ALAC, AC3, MP2, WavPack (WV), MKA, CAF, DTS</span>
             </div>
             <div class="format-group">
               <strong>Video</strong>
-              <span>AVI, FLV, MKV, MOV, MP4, MPEG, OGV, WEBM, WMV, 3GP, GIF (video to GIF)</span>
+              <span>MP4, AVI, MOV, MKV, WEBM, WMV, FLV, 3GP, M4V, MPG/MPEG, OGV, TS/MTS/M2TS, MXF, HEVC/H264/H265, AV1/VP9, GIF, WEBP, APNG, DV, RM</span>
             </div>
             <div class="format-group">
               <strong>Document</strong>
-              <span>PDF, TXT, DOCX, DOC</span>
+              <span>PDF ↔ TXT/HTML/MD/CSV/JSON, DOCX/DOC → PDF/TXT/HTML/JSON, HTML/MD ↔ PDF/TXT, CSV ↔ JSON, RTF, XML/YAML, ODT/ODS/ODP/XLS/PPT (via LibreOffice hint)</span>
+            </div>
+            <div class="format-group">
+              <strong>AutoCAD & CAD</strong>
+              <span>DWG (R12-2018+ via LibreDWG WASM → DXF), DXF, DWF/DWFX, + via assimp</span>
+            </div>
+            <div class="format-group">
+              <strong>SketchUp</strong>
+              <span>SKP, SKB (via openskp 1.1 → GLB/GLTF/STL/OBJ/PLY/DXF/IFC/JSON, en via GLB→DAE/FBX/USD)</span>
             </div>
             <div class="format-group">
               <strong>3D Model</strong>
-              <span>3DS, 3MF, AC, AMF, ASE, B3D, BLEND, BVH, COB, Collada (DAE), DXF, FBX, GLTF, GLB, LWO, MD2, MD5Mesh, MDC, MDL, MS3D, NFF, OBJ, OFF, Ogex, PLY, Q3O, SIB, SMD, STL, X, XGL</span>
+              <span>3DS, 3MF, AC, AMF, ASE, ASSBIN, B3D, BLEND, BVH, CSM, Collada (DAE), DXF, FBX, GLTF/GLB, HMP, IFC, IRR, LWO/LXO/LWS, MD2/MD3/MD5, MDC, MDL, MS3D, NDO, NFF, OBJ, OFF, OGEX, PLY, PMX, Q3D, RAW, SIB, SMD, STL, STP/STEP, TER, USD/USDA/USDC/USDZ, VRM, X/X3D/XGL, 3DM, BREP, C4D, + SKP/SKB</span>
             </div>
             <div class="format-group">
-              <strong>Game Engine</strong>
-              <span>FBX, OBJ, MD5, SMD, B3D, MDL, MD2, MD3, 3DS, X, DXF + many more via assimp</span>
+              <strong>3D Export</strong>
+              <span>GLTF, GLB, STL, OBJ, PLY, FBX, DAE, DXF, USD, IFC (SketchUp direct; andere via assimp)</span>
+            </div>
+            <div class="format-group">
+              <strong>BIM</strong>
+              <span>IFC (via assimp & openskp), USD/USDA, STEP/STP, IGES/IGS</span>
+            </div>
+            <div class="format-group">
+              <strong>Archive</strong>
+              <span>ZIP, JAR/WAR/EAR/APK/AAB (zip-based), TAR/TGZ, GZ/BZ2/XZ, 7Z/RAR/CAB/ISO (via 7-Zip) — onderling converteerbaar via extract → re-pack</span>
             </div>
             <div class="format-group">
               <strong>Animation</strong>
-              <span>Lottie (.lottie), SVG, APNG, Animated WebP</span>
+              <span>Lottie (.lottie + .json), GIF, WEBP</span>
             </div>
           </section>
           <section>
             <h3>Tips</h3>
             <ul>
               <li>Hold <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> to select multiple files</li>
-              <li>3D models can be converted to GLTF, GLB, or STL</li>
-              <li>Lottie animations can be converted to MP4, GIF, or WEBP</li>
-              <li>Documents (PDF, TXT, DOCX) can be converted to PDF or TXT</li>
-              <li>Large video files may take longer to convert</li>
-              <li>Output files are saved in your chosen folder</li>
+              <li>GIF: animated GIF → MP4/WEBM/WEBP/APNG behoudt animatie via FFmpeg; static GIF → JPG/PNG via sharp</li>
+              <li>AutoCAD: DWG (R12-2018+) via WASM → DXF → GLTF/GLB/STL/OBJ/PLY</li>
+              <li>SketchUp: SKP/SKB (2021+ VFF + 2013-2020 legacy) → GLB, STL, OBJ (+MTL), PLY, DXF, IFC, JSON via <em>openskp</em>; SKP → DAE/FBX via GLB → assimp</li>
+              <li>3D/BIM: GLTF/GLB/STL/OBJ/PLY/FBX/DAE/DXF/USD/IFC/STEP/IGES/3DM voor alle model types</li>
+              <li>Images: RAW (CR2/NEF/ARW/DNG...), PSD, JXL, HDR, ICO → JPG/PNG/WEBP via sharp met FFmpeg fallback</li>
+              <li>Documents: PDF ↔ TXT/HTML/MD/JSON/CSV, DOCX → PDF/TXT/HTML/JSON, MD → HTML, CSV ↔ JSON, RTF → TXT</li>
+              <li>Archives: ZIP/JAR ↔ TAR/TGZ/GZ/BZ2/XZ, ZIP ↔ 7Z/RAR (vereist 7-Zip), alle archieven onderling converteerbaar</li>
+              <li>Lottie animations → MP4, GIF, WEBP</li>
+              <li>Large video/GIF/SKP files may take longer</li>
+              <li>Media Player now previews images, GIF, video & audio with search, filters and shuffle</li>
+              <li>Windows dropdown wit-op-wit is gefixed (donkere popup)</li>
             </ul>
           </section>
           <section class="modal-footer-text">
-            <p>Converter v<span id="modalVersion">1.0.0</span> &mdash; Built with Electron, sharp, FFmpeg &amp; assimp</p>
+            <p>Converter v<span id="modalVersion">1.0.0</span> &mdash; Built with Electron, sharp, FFmpeg, assimp, LibreDWG WASM &amp; openskp</p>
           </section>
         </div>
       </div>

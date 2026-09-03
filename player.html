@@ -11,32 +11,44 @@
   <div class="app">
     <div class="sidebar">
       <div class="sidebar-header">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-          <circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="2"/>
-          <path d="M8 7v8l6-4-6-4z" fill="currentColor"/>
-        </svg>
-        <span>Media Player</span>
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="2"/>
+            <path d="M8 7v8l6-4-6-4z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">Media Player</span>
+          <span class="logo-sub">Converter</span>
+        </div>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-label">Browse</div>
         <button class="sidebar-item active" id="sidebarHome">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14V6l6-5 6 5v8H2z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14V6l6-5 6 5v8H2z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 6v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Home
         </button>
-      </div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">Library</div>
         <button class="sidebar-item" id="sidebarRecent">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           Recent
         </button>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Library</div>
         <button class="sidebar-item" id="sidebarMusic">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 13V3.5l8-1.5v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="4" cy="13" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
           Music
+          <span class="count" id="countMusic"></span>
         </button>
         <button class="sidebar-item" id="sidebarVideo">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M11 8l-5-3v6l5-3z" fill="currentColor"/></svg>
           Videos
+          <span class="count" id="countVideo"></span>
+        </button>
+        <button class="sidebar-item" id="sidebarImage">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="6" cy="7" r="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M2 11l3-3 3 3 2-2 2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+          Images & GIF
+          <span class="count" id="countImage"></span>
         </button>
       </div>
       <div class="sidebar-section sidebar-section-grow">
@@ -44,17 +56,52 @@
         <div class="sidebar-dir-list" id="sidebarDirList"></div>
       </div>
       <div class="sidebar-footer">
-        <button class="sidebar-item" id="sidebarOpenFile">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h5l2 2h5v7H2V4z" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-          Open File...
+        <button class="sidebar-item sidebar-item-cta" id="sidebarOpenFile">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h5l2 2h5v7H2V4z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 8v4M6 10h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Open Files
         </button>
+        <div class="sidebar-hint">Drop media files here</div>
       </div>
     </div>
 
     <div class="main-content">
-      <!-- Player Stage (video/audio full area) -->
+      <!-- Top bar: breadcrumb + search + view toggle -->
+      <div class="topbar">
+        <div class="breadcrumb" id="breadcrumb">
+          <span class="breadcrumb-item" data-path="">Home</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M9.5 9.5l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <input type="text" id="searchInput" placeholder="Search files..." autocomplete="off" spellcheck="false" />
+            <button class="search-clear" id="searchClear" style="display:none">×</button>
+          </div>
+          <div class="view-toggle" id="viewToggle">
+            <button class="view-btn active" data-view="list" title="List view">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 5h10M3 8h10M3 11h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+            <button class="view-btn" data-view="grid" title="Grid view">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="4" height="4" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="9" y="3" width="4" height="4" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="3" y="9" width="4" height="4" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="9" y="9" width="4" height="4" rx="1" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter chips -->
+      <div class="filter-bar" id="filterBar">
+        <button class="chip active" data-filter="all">All</button>
+        <button class="chip" data-filter="video">Video</button>
+        <button class="chip" data-filter="audio">Audio</button>
+        <button class="chip" data-filter="image">Images</button>
+        <button class="chip" data-filter="gif">GIF</button>
+        <span class="filter-count" id="filterCount"></span>
+      </div>
+
+      <!-- Player Stage (video/audio/image/gif) -->
       <div class="player-stage" id="playerStage" style="display:none">
+        <div class="stage-bg" id="stageBg"></div>
         <video id="playerVideo" playsinline></video>
+        <img id="playerImage" alt="" style="display:none" />
         <div class="player-stage-art" id="playerStageArt">
           <div class="art-glow"></div>
           <div class="art-icon">
@@ -70,11 +117,9 @@
             <div class="art-detail" id="artDetail"></div>
           </div>
         </div>
-      </div>
-
-      <!-- Breadcrumb -->
-      <div class="breadcrumb" id="breadcrumb">
-        <span class="breadcrumb-item" data-path="">Home</span>
+        <button class="stage-close" id="stageClose" title="Close player (Esc)">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
       </div>
 
       <!-- File listing -->
@@ -82,15 +127,20 @@
         <div class="file-list-header">
           <span class="file-list-name">Name</span>
           <span class="file-list-size">Size</span>
+          <span class="file-list-type">Type</span>
         </div>
         <div class="file-list" id="fileList"></div>
+        <div class="file-grid" id="fileGrid" style="display:none"></div>
       </div>
 
       <!-- Recent view -->
       <div class="file-browser" id="recentView" style="display:none">
         <div class="recent-header">
           <h2>Recent Files</h2>
-          <button id="clearRecentBtn" class="btn-text">Clear</button>
+          <div class="recent-actions">
+            <span class="recent-count" id="recentCount"></span>
+            <button id="clearRecentBtn" class="btn-text">Clear</button>
+          </div>
         </div>
         <div class="recent-grid" id="recentGrid"></div>
       </div>
@@ -98,26 +148,33 @@
       <!-- Empty state -->
       <div class="empty-state" id="emptyState" style="display:none">
         <div class="empty-state-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-            <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2" opacity="0.3"/>
-            <path d="M20 17v14l12-7-12-7z" fill="currentColor" opacity="0.3"/>
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="20" stroke="currentColor" stroke-width="1.8" opacity="0.2"/>
+            <path d="M22 20v16l12-8-12-8z" fill="currentColor" opacity="0.25"/>
           </svg>
         </div>
-        <p>No files found</p>
+        <p id="emptyText">No files found</p>
+        <span class="empty-hint">Try a different filter or open a folder</span>
       </div>
 
       <!-- Loading -->
       <div class="loading" id="loading" style="display:none">
         <div class="spinner"></div>
+        <span>Loading...</span>
       </div>
     </div>
 
     <!-- Player controls (sticky bottom) -->
     <div class="player-controls" id="playerControls" style="display:none">
       <div class="player-info-bar">
-        <div class="player-filename" id="playerFilename">No file loaded</div>
-        <div class="player-details" id="playerDetails"></div>
-        <button id="playerCloseBtn" class="pbtn pbtn-close" title="Close">
+        <div class="player-info-left">
+          <div class="player-thumb" id="playerThumb"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 11.8V4.8L12 3.6V11" stroke="white" stroke-width="1.4" stroke-linecap="round"/><circle cx="4" cy="11.8" r="1.6" stroke="white" stroke-width="1.3"/><circle cx="11" cy="11.2" r="1.6" stroke="white" stroke-width="1.3"/></svg></div>
+          <div class="player-text">
+            <div class="player-filename" id="playerFilename">No file loaded</div>
+            <div class="player-details" id="playerDetails"></div>
+          </div>
+        </div>
+        <button id="playerCloseBtn" class="pbtn pbtn-close" title="Close (Esc)">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
       </div>
@@ -130,22 +187,25 @@
       </div>
       <div class="player-buttons">
         <div class="player-left">
+          <button id="playerShuffleBtn" class="pbtn" title="Shuffle">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M13 3l3 3-3 3M16 6H9a3 3 0 00-3 3 3 3 0 003 3h2M5 15l-3-3 3-3M2 12h7a3 3 0 003-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+          </button>
+          <button id="playerPrevBtn" class="pbtn" title="Previous (P)">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14 3v12L5 9l9-6z" fill="currentColor"/><path d="M3 3v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
           <button id="playerPlayBtn" class="pbtn pbtn-play" title="Play (Space)">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 5v14l12-7L8 5z" fill="currentColor"/></svg>
           </button>
-          <button id="playerPrevBtn" class="pbtn" title="Previous">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14 3v12L5 9l9-6z" fill="currentColor"/></svg>
+          <button id="playerNextBtn" class="pbtn" title="Next (N)">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 3v12l9-6-9-6z" fill="currentColor"/><path d="M15 3v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </button>
-          <button id="playerNextBtn" class="pbtn" title="Next">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 3v12l9-6-9-6z" fill="currentColor"/></svg>
+          <button id="playerLoopBtn" class="pbtn" title="Loop (L)">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 6h10l-2-2m2 8H4l2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
           </button>
           <span class="player-time" id="playerTime">0:00 / 0:00</span>
         </div>
         <div class="player-right">
-          <button id="playerLoopBtn" class="pbtn" title="Loop">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 6h10l-2-2m2 8H4l2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
-          </button>
-          <button id="playerVolumeBtn" class="pbtn" title="Volume">
+          <button id="playerVolumeBtn" class="pbtn" title="Volume (M)">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 7H5v6h3l4 4V3L8 7z" fill="currentColor"/><path d="M14 8a3 3 0 010 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </button>
           <div class="player-volume-slider" id="playerVolumeSlider">
@@ -154,7 +214,7 @@
           <button id="playerPiPBtn" class="pbtn" title="Picture in Picture">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="2" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="9" y="8" width="7" height="6" rx="1" fill="currentColor" opacity="0.6"/></svg>
           </button>
-          <button id="playerFullscreenBtn" class="pbtn" title="Fullscreen">
+          <button id="playerFullscreenBtn" class="pbtn" title="Fullscreen (F)">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 8V4h4M15 10v4h-4M3 10v4h4M15 8V4h-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </button>
         </div>
