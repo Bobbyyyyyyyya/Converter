@@ -144,7 +144,7 @@ body {
 
 .update-icon svg { width: 18px; height: 18px; display: block; }
 
-.update-icon.checking { background: rgba(148, 163, 184, 0.12); color: #94a3b8; }
+.update-icon.checking { background: rgba(148, 163, 184, 0.12); color: #94a3b8; animation: spin 1s linear infinite; }
 .update-icon.available { background: rgba(99, 102, 241, 0.14); color: #818cf8; }
 .update-icon.not-available { background: rgba(34, 197, 94, 0.12); color: #4ade80; }
 .update-icon.downloading { background: rgba(99, 102, 241, 0.14); color: #818cf8; animation: spin 1s linear infinite; }
