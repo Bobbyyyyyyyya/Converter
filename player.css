@@ -332,14 +332,33 @@ body::before {
 .loading span::after { content: ''; animation: dots 1.4s infinite; }
 @keyframes dots { 0%{content:''} 33%{content:'.'} 66%{content:'..'} 100%{content:'...'} }
 
-.spinner {
-  width: 36px; height: 36px; border-radius: 50%; position: relative;
-  background: conic-gradient(from 0deg, #6366f1 0deg, #8b5cf6 140deg, #a78bfa 260deg, #6366f1 360deg);
-  mask: radial-gradient(circle, transparent 62%, black 63%);
-  -webkit-mask: radial-gradient(circle, transparent 62%, black 63%);
-  animation: spin 0.9s linear infinite;
-  box-shadow: 0 0 0 1px rgba(99,102,241,0.08), 0 4px 16px rgba(99,102,241,0.18);
+/* Echt nieuw — dot-pulse i.p.v. spinner */
+.loader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.loader span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 1px 8px rgba(99,102,241,0.28);
+  animation: loaderDot 1.15s infinite ease-in-out;
+}
+
+.loader span:nth-child(2) { background: linear-gradient(135deg, #8b5cf6, #a78bfa); animation-delay: 0.16s; }
+.loader span:nth-child(3) { background: linear-gradient(135deg, #a78bfa, #6366f1); animation-delay: 0.32s; }
+.loader--large span { width: 12px; height: 12px; }
+
+@keyframes loaderDot {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+  40% { transform: scale(1.2); opacity: 1; box-shadow: 0 3px 12px rgba(99,102,241,0.32); }
+}
+
+.spinner { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Player Controls */
