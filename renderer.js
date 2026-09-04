@@ -22,6 +22,8 @@ const updateDesc = document.getElementById('updateDesc');
 const updateActions = document.getElementById('updateActions');
 const updateBtn = document.getElementById('updateBtn');
 const updateDismiss = document.getElementById('updateDismiss');
+const updateProgress = document.getElementById('updateProgress');
+const updateProgressFill = document.getElementById('updateProgressFill');
 const checkUpdateBtn = document.getElementById('checkUpdateBtn');
 const versionDisplay = document.getElementById('versionDisplay');
 
@@ -93,10 +95,15 @@ window.converter.onUpdateStatus((data) => {
       scheduleHide(2500);
       break;
     case 'downloading':
+      // Toon progress balk vloeiend
+      if (updateProgress) {
+        updateProgress.style.display = 'block';
+        requestAnimationFrame(() => { updateProgressFill.style.width = `${Math.max(2, data.percent)}%`; });
+      }
       updateIcon.innerHTML = UPDATE_ICONS.downloading;
       updateIcon.className = 'update-icon downloading';
       updateTitle.textContent = 'Update downloaden...';
-      updateDesc.textContent = `${data.percent}%`;
+      updateDesc.textContent = `${data.percent}% • Even geduld`;
       updateBtn.style.display = '';
       updateDismiss.style.display = 'flex';
       updateBtn.textContent = `${data.percent}%`;
@@ -132,13 +139,28 @@ window.converter.onUpdateStatus((data) => {
 function showUpdate(state, iconSvg, title, desc) {
   if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
   updateState = state;
-  updateIcon.innerHTML = iconSvg;
-  updateIcon.className = 'update-icon ' + state;
-  updateTitle.textContent = title;
-  updateDesc.textContent = desc;
+  // Vloeiende tekst wissel
   updateBanner.style.display = 'block';
   updateBanner.classList.remove('hiding');
-  // A11y
+  // Icon morph
+  updateIcon.innerHTML = iconSvg;
+  updateIcon.className = 'update-icon ' + state;
+  // Tekst met subtiele fade
+  updateTitle.style.opacity = '0';
+  updateDesc.style.opacity = '0';
+  setTimeout(() => {
+    updateTitle.textContent = title;
+    updateDesc.textContent = desc;
+    updateTitle.style.opacity = '1';
+    updateDesc.style.opacity = '1';
+  }, 80);
+  updateTitle.style.transition = 'opacity 0.2s ease';
+  updateDesc.style.transition = 'opacity 0.2s ease';
+  // Verberg progress default
+  if (updateProgress) {
+    updateProgress.style.display = 'none';
+    updateProgressFill.style.width = '0%';
+  }
   updateBanner.setAttribute('aria-live', 'polite');
 }
 
@@ -150,6 +172,10 @@ function hideUpdate() {
     updateBanner.style.display = 'none';
     updateBanner.classList.remove('hiding');
     updateState = null;
+    if (updateProgress) {
+      updateProgress.style.display = 'none';
+      updateProgressFill.style.width = '0%';
+    }
   }, 220);
 }
 
