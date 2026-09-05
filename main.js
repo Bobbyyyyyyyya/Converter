@@ -213,7 +213,10 @@ function isSupportedFile(filePath) {
   } catch { return false; }
 }
 
-const gotLock = app.requestSingleInstanceLock();
+// In dev (--dev) de single-instance lock overslaan, zodat dev naast de
+// geïnstalleerde /Applications/Converter.app kan draaien (zelfde appId).
+const isDev = process.argv.includes('--dev');
+const gotLock = isDev ? true : app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
@@ -336,6 +339,12 @@ ipcMain.handle('convert', async (_event, { files, targetFormat, outputDir }) => 
   const results = [];
   for (const file of files) {
     try {
+      // Bestand moet echt bestaan (voorkomt cryptische ENOENT bij kale bestandsnamen uit drag-drop)
+      try {
+        if (!fs.statSync(file).isFile()) throw new Error('not-a-file');
+      } catch {
+        throw new Error(`Bestand niet gevonden: "${file}". Sleep het bestand opnieuw of kies via klikken/bladeren.`);
+      }
       const outputPath = path.join(outputDir, path.basename(file, path.extname(file)) + '.' + targetFormat);
       await convertFile(file, outputPath, targetFormat, (progress) => {
         mainWindow.webContents.send('convert-progress', { file, progress });

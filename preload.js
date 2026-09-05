@@ -1,7 +1,11 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('converter', {
   selectFiles: () => ipcRenderer.invoke('select-files'),
+  // Echt pad van een gedropt File-object (File.path is niet meer beschikbaar in nieuwe Electron-versies)
+  getPathForFile: (file) => {
+    try { return webUtils.getPathForFile(file); } catch { return file?.name || ''; }
+  },
   getFormatInfo: (filePath) => ipcRenderer.invoke('get-format-info', filePath),
   convert: (data) => ipcRenderer.invoke('convert', data),
   selectOutputDir: () => ipcRenderer.invoke('select-output-dir'),

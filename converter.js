@@ -85,6 +85,15 @@ function getFormatInfo(filePath) {
     }
     return { ext, type, validTargets: TARGETS_CACHE[cacheKey] };
   }
+  // DWF/DWFX: geen 3D-geometrie via assimp, maar wel converteerbaar naar
+  // beeld/PDF via de ingebedde raster-previews per sheet (cad-preview).
+  if (ext === 'dwf' || ext === 'dwfx') {
+    const cacheKey = 'dwf';
+    if (!TARGETS_CACHE[cacheKey]) {
+      TARGETS_CACHE[cacheKey] = ['png', 'jpg', 'jpeg', 'pdf'];
+    }
+    return { ext, type, validTargets: TARGETS_CACHE[cacheKey] };
+  }
   const validTargets = TARGETS_CACHE[type] || (TARGETS_CACHE[type] = getTargetsForType(type));
   return { ext, type, validTargets };
 }
@@ -177,6 +186,25 @@ async function convertFile(inputPath, outputPath, targetFormat, onProgress) {
     // SketchUp SKP/SKB via openskp (native, no assimp)
     if (ext === 'skp' || ext === 'skb') {
       await convertSketchup(inputPath, outputPath, targetFormat, onProgress);
+      return;
+    }
+    // DWG -> DXF direct via LibreDWG WASM (assimp heeft geen DXF-exporter,
+    // dus niet via de generieke DXF->DXF assimp-route laten lopen)
+    if (ext === 'dwg' && targetFormat === 'dxf') {
+      await convertDwgToDxf(inputPath, outputPath, onProgress);
+      return;
+    }
+    // DWF/DWFX -> beeld/PDF via ingebedde sheet-previews (geen assimp)
+    if (ext === 'dwf' || ext === 'dwfx') {
+      await convertDwf(inputPath, outputPath, targetFormat, onProgress);
+      return;
+    }
+    // DXF -> DXF is gewoon kopiëren
+    if (ext === 'dxf' && targetFormat === 'dxf') {
+      const src = path.resolve(inputPath);
+      const dst = path.resolve(outputPath);
+      if (src !== dst) fs.copyFileSync(inputPath, outputPath);
+      onProgress?.(100);
       return;
     }
     const modelTargets = ['gltf', 'glb', 'stl', 'obj', 'ply', 'fbx', 'dae', 'dxf', 'usd', 'usda', 'ifc', '3dm', 'step', 'stp', 'iges', 'igs'];
@@ -645,6 +673,128 @@ async function prepareCadInput(inputPath, onProgress) {
 
   // For other CAD (dxf, etc) just return original buffer
   return { buffer: new Uint8Array(fs.readFileSync(inputPath)), fileName: path.basename(inputPath), originalPath: inputPath };
+}
+
+// ---- DWG -> DXF direct (LibreDWG WASM, zonder assimp) ----
+async function convertDwgToDxf(inputPath, outputPath, onProgress) {
+  onProgress?.(10);
+  let converter;
+  try {
+    converter = require('dwg2dxf-converter');
+  } catch (e) {
+    throw new Error('DWG support requires dwg2dxf-converter. Run npm install. Als fallback: open in AutoCAD en sla op als DXF (versie 2000/2018).');
+  }
+  onProgress?.(30);
+  const result = await converter.convertDwgToDxf(inputPath, outputPath, { timeout: 60000 });
+  if (!result.success) {
+    throw new Error(`DWG naar DXF mislukt: ${result.error || 'onbekende fout'} - probeer DWG in AutoCAD als DXF op te slaan`);
+  }
+  onProgress?.(100);
+}
+
+// ---- DWF/DWFX -> PNG/JPG/PDF via ingebedde sheet-previews ----
+// NB: DWF met 3D-inhoud (W3D-streams) kan niet naar 3D geconverteerd worden:
+// geen enkele gratis library (assimp incl.) leest W3D. Daarvoor blijft gelden:
+// in AutoCAD exporteren als DWG/DXF (DWG/DXF -> GLTF/GLB/STL/OBJ werkt wel).
+function dwfHas3DSections(buffer) {
+  try {
+    return buffer.indexOf('W3D') !== -1;
+  } catch {
+    return false;
+  }
+}
+
+async function convertDwf(inputPath, outputPath, targetFormat, onProgress) {
+  onProgress?.(10);
+  const fmt = targetFormat.toLowerCase();
+  let raw;
+  try {
+    raw = fs.readFileSync(inputPath);
+  } catch (e) {
+    throw new Error(`DWF lezen mislukt: ${e.message}`);
+  }
+  const has3D = dwfHas3DSections(raw);
+  if (!['png', 'jpg', 'jpeg', 'pdf'].includes(fmt)) {
+    throw new Error(
+      has3D
+        ? `Dit DWF bevat 3D-inhoud, maar DWF-3D (W3D) kan niet geconverteerd worden. Exporteer in AutoCAD als DWG en converteer daarna naar ${targetFormat.toUpperCase()}.`
+        : `DWF ondersteunt alleen PNG, JPG en PDF als doel (gevraagd: ${targetFormat}). Voor 3D (GLTF/STL/OBJ): sla in AutoCAD op als DWG of DXF.`
+    );
+  }
+
+  let previews;
+  try {
+    const { extractPreviews } = require('cad-preview');
+    previews = extractPreviews(new Uint8Array(raw), { filename: path.basename(inputPath) }) || [];
+  } catch (e) {
+    throw new Error(`DWF lezen mislukt: ${e.message}`);
+  }
+  onProgress?.(40);
+
+  if (previews.length === 0) {
+    throw new Error(
+      has3D
+        ? 'Dit DWF bevat wel 3D-inhoud maar geen bruikbare previews. Exporteer in AutoCAD als DWG en converteer daarna verder.'
+        : 'Geen previews gevonden in dit DWF-bestand. Sla het in AutoCAD op als DWG of DXF en converteer daarna verder.'
+    );
+  }
+
+  const sheets = previews.map((p) => Buffer.from(p.data));
+  onProgress?.(50);
+
+  if (fmt === 'pdf') {
+    // Eén PDF-pagina per sheet
+    const doc = new PDFDocument({ autoFirstPage: false });
+    const writeStream = fs.createWriteStream(outputPath);
+    doc.pipe(writeStream);
+    let i = 0;
+    for (const buf of sheets) {
+      i++;
+      onProgress?.(50 + Math.round((i / sheets.length) * 45));
+      const imgBuf = await sharp(buf).png().toBuffer();
+      doc.addPage();
+      doc.image(imgBuf, 0, 0, { fit: [doc.page.width, doc.page.height], align: 'center', valign: 'center' });
+    }
+    doc.end();
+    await new Promise((resolve) => writeStream.on('finish', resolve));
+    onProgress?.(100);
+    return;
+  }
+
+  // Beeld-doel: 1 sheet direct, meerdere sheets verticaal aan elkaar plakken
+  let srcBuf = sheets[0];
+  if (sheets.length > 1) {
+    const metas = await Promise.all(sheets.map((b) => sharp(b).metadata()));
+    const maxW = Math.max(...metas.map((m) => m.width));
+    const sumH = metas.reduce((s, m) => s + Math.round((m.height * maxW) / m.width), 0);
+    const resized = await Promise.all(
+      sheets.map((b) => sharp(b).resize({ width: maxW }).png().toBuffer())
+    );
+    let top = 0;
+    const composite = resized.map((b, idx) => {
+      const h = Math.round((metas[idx].height * maxW) / metas[idx].width);
+      const item = { input: b, left: 0, top };
+      top += h;
+      return item;
+    });
+    srcBuf = await sharp({
+      create: { width: maxW, height: sumH, channels: 3, background: { r: 255, g: 255, b: 255 } },
+    })
+      .composite(composite)
+      .png()
+      .toBuffer();
+  }
+
+  // Hergebruik de bestaande image-pipeline (jpg/webp-kwaliteit etc.)
+  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'dwf-'));
+  const tmpPng = path.join(tmpDir, 'sheet.png');
+  try {
+    fs.writeFileSync(tmpPng, srcBuf);
+    onProgress?.(70);
+    await convertImage(tmpPng, outputPath, fmt === 'jpeg' ? 'jpg' : fmt, onProgress);
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  }
 }
 
 // ---- SketchUp SKP/SKB via openskp ----

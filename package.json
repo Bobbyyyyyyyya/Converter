@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Convert images, audio, video, documents, 3D models & animations",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
@@ -310,6 +310,7 @@
     "adm-zip": "^0.6.0",
     "archiver": "^8.0.0",
     "assimpjs": "^0.0.10",
+    "cad-preview": "^0.2.0",
     "dwg2dxf-converter": "^1.0.4",
     "electron-updater": "^6.0.0",
     "fluent-ffmpeg": "^2.1.3",

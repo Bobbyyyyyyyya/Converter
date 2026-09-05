@@ -210,22 +210,26 @@ dropZone.addEventListener('dragleave', () => {
 dropZone.addEventListener('drop', async (e) => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  // Electron provides .path, fallback to webUtils if needed
+  // Pad ophalen via preload (webUtils.getPathForFile); File.path bestaat niet meer in nieuwe Electron-versies
   const files = Array.from(e.dataTransfer.files);
   const paths = [];
+  const noPathNames = [];
   for (const f of files) {
-    if (f.path) {
-      paths.push(f.path);
-    } else {
-      // Fallback for browsers where path is not available - try getPathForFile (Electron)
-      try {
-        const p = window.electron?.webUtils?.getPathForFile?.(f) || window.converter?.getPathForFile?.(f);
-        if (p) paths.push(p);
-        else paths.push(f.name); // will be unknown but show error
-      } catch {
-        paths.push(f.name);
-      }
+    let p = '';
+    try {
+      p = window.converter?.getPathForFile?.(f) || f.path || '';
+    } catch {
+      p = f.path || '';
     }
+    if (p && (p.includes('/') || p.includes('\\'))) {
+      paths.push(p);
+    } else {
+      noPathNames.push(f.name || 'onbekend bestand');
+    }
+  }
+  if (noPathNames.length > 0) {
+    showUploadError(`<strong>Kon pad niet bepalen voor:</strong> ${noPathNames.slice(0, 3).join(', ')} — klik op de drop-zone om via de bestandsdialoog te kiezen.`);
+    if (paths.length === 0) return;
   }
   // If single directory dropped, inform user
   if (paths.length === 1) {
@@ -369,24 +373,38 @@ function updateTargetFormatOptions() {
     return;
   }
 
-  // GIF special handling: if any gif in selection, show combined targets
-  const hasGif = selectedFiles.some(f => f.ext === 'gif');
-  const commonTypes = new Set(selectedFiles.map((f) => f.type));
-  let commonTargets;
-  if (hasGif && commonTypes.size === 1 && selectedFiles[0].ext === 'gif') {
-    // GIF can go to image + video
-    commonTargets = [...new Set([...getTargetsForType('image'), ...getTargetsForType('video'), 'apng', 'avif'])];
-  } else if (commonTypes.size === 1) {
-    // Use per-file targets for accurate per-ext handling (gif logic inside getTargetsForType)
-    const first = selectedFiles[0];
-    if (first.ext === 'gif' && typeof window.converter !== 'undefined') {
-      // Will be handled via getFormatInfo validTargets, fallback to combined
-      commonTargets = [...new Set([...getTargetsForType('image'), ...getTargetsForType('video')])];
+  // Per-extension targets: use validTargets from getFormatInfo so e.g. DWF/DWFX
+  // (niet direct converteerbaar) geen onmogelijke opties toont. Neem de intersectie
+  // zodat alleen formaten overblijven die voor ALLE geselecteerde bestanden werken.
+  let commonTargets = null;
+  for (const f of selectedFiles) {
+    const targets = Array.isArray(f.validTargets) ? f.validTargets : getTargetsForType(f.type);
+    if (commonTargets === null) {
+      commonTargets = [...targets];
     } else {
-      commonTargets = getTargetsForType(first.type);
+      const set = new Set(targets);
+      commonTargets = commonTargets.filter((t) => set.has(t));
     }
-  } else {
-    commonTargets = ['mp4', 'mp3', 'png', 'jpg', 'webp', 'gif', 'apng', 'jxl', 'wav', 'ogg', 'flac', 'aac', 'opus', 'avi', 'mov', 'mkv', 'webm', 'heic', 'heif', 'jp2', '3gp', 'mpg', 'pdf', 'txt', 'html', 'md', 'csv', 'json', 'gltf', 'glb', 'stl', 'obj', 'ply', 'fbx', 'dae', 'skp', 'dxf', 'usd', 'ifc', 'zip', 'tar', 'gz', '7z'];
+  }
+  commonTargets = commonTargets || [];
+
+  if (commonTargets.length === 0) {
+    targetFormat.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '—';
+    targetFormat.appendChild(opt);
+    // Specifieke uitleg voor DWF/DWFX, anders generieke melding
+    const hasDwf = selectedFiles.some((f) => f.ext === 'dwf' || f.ext === 'dwfx');
+    if (hasDwf) {
+      const reason = selectedFiles.find((f) => f.unsupportedReason)?.unsupportedReason
+        || 'DWF/DWFX kan niet direct geconverteerd worden. Sla het bestand in AutoCAD op als DWG of DXF en converteer daarna naar GLTF/GLB/STL/OBJ/PLY.';
+      showUploadError(`<strong>Dit bestand kan niet direct geconverteerd worden:</strong> ${reason}`);
+    } else {
+      showUploadError('<strong>Geen gemeenschappelijk doelformaat:</strong> selecteer bestanden van hetzelfde type (bijv. alleen DWG/DXF, of alleen images).');
+    }
+    updateConvertButton();
+    return;
   }
 
   const fragment = document.createDocumentFragment();
@@ -402,6 +420,7 @@ function updateTargetFormatOptions() {
   }
   targetFormat.innerHTML = '';
   targetFormat.appendChild(fragment);
+  updateConvertButton();
 }
 
 function getTargetsForType(type) {
@@ -418,7 +437,8 @@ function getTargetsForType(type) {
 }
 
 function updateConvertButton() {
-  convertBtn.disabled = selectedFiles.length === 0 || !currentOutputDir;
+  const hasValidTarget = targetFormat.value && targetFormat.value !== '' && targetFormat.value !== '—';
+  convertBtn.disabled = selectedFiles.length === 0 || !currentOutputDir || !hasValidTarget;
 }
 
 // ---- Output Directory ----
