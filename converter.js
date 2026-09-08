@@ -5,8 +5,17 @@ const ffmpeg = require('fluent-ffmpeg');
 const PDFDocument = require('pdfkit');
 const mammoth = require('mammoth');
 
-const ffmpegPath = process.env.FFMPEG_PATH || findSystemFfmpeg() || require('@ffmpeg-installer/ffmpeg').path;
+const ffmpegPath = process.env.FFMPEG_PATH || findSystemFfmpeg() || resolveInstallerPath();
 ffmpeg.setFfmpegPath(ffmpegPath);
+
+function resolveInstallerPath() {
+  let p = require('@ffmpeg-installer/ffmpeg').path;
+  if (p.includes('.asar' + path.sep)) {
+    const unpacked = p.replace('.asar' + path.sep, '.asar.unpacked' + path.sep);
+    try { if (fs.statSync(unpacked).isFile()) p = unpacked; } catch {}
+  }
+  return p;
+}
 
 function findSystemFfmpeg() {
   const candidates = [
@@ -120,6 +129,14 @@ function getTargetsForType(type) {
 }
 
 async function convertFile(inputPath, outputPath, targetFormat, onProgress) {
+  const resolvedInput = path.resolve(inputPath);
+  const resolvedOutput = path.resolve(outputPath);
+  let useTmpOutput = false;
+  if (resolvedInput === resolvedOutput) {
+    outputPath = outputPath + '.tmp_convert';
+    useTmpOutput = true;
+  }
+
   const ext = path.extname(inputPath).toLowerCase().replace('.', '');
   const type = TYPE_MAP[ext];
 
@@ -225,6 +242,10 @@ async function convertFile(inputPath, outputPath, targetFormat, onProgress) {
     await convertAnimation(inputPath, outputPath, targetFormat, onProgress);
   } else {
     throw new Error(`Unsupported file type: .${ext}`);
+  }
+
+  if (useTmpOutput) {
+    fs.renameSync(outputPath, resolvedOutput);
   }
 }
 

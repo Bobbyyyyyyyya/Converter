@@ -1,6 +1,6 @@
 {
   "name": "converter",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Convert images, audio, video, documents, 3D models & animations",
   "main": "main.js",
   "author": "Converter App <converter@app.com>",
@@ -39,7 +39,11 @@
       "node_modules/**/*"
     ],
     "asarUnpack": [
-      "node_modules/@ffmpeg-installer/**"
+      "node_modules/@ffmpeg-installer/**",
+      "node_modules/@img/sharp-*/**",
+      "node_modules/@napi-rs/canvas*/**",
+      "node_modules/assimpjs/dist/**",
+      "node_modules/dwg2dxf-converter/wasm/**"
     ],
     "fileAssociations": [
       {
