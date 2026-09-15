@@ -62,6 +62,9 @@ const sidebarImage = document.getElementById('sidebarImage');
 const sidebarOpenFile = document.getElementById('sidebarOpenFile');
 const sidebarBrowseFolder = document.getElementById('sidebarBrowseFolder');
 const clearRecentBtn = document.getElementById('clearRecentBtn');
+const createAlbumBtn = document.getElementById('createAlbumBtn');
+const albumSection = document.getElementById('albumSection');
+const albumList = document.getElementById('albumList');
 
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
@@ -77,6 +80,7 @@ const viewToggle = document.getElementById('viewToggle');
   loadDirectory(home);
   loadRecent();
   loadSidebarDirs(platform);
+  loadAlbums();
 })();
 
 window.player.onOpenMediaFiles((files) => {
@@ -303,6 +307,141 @@ async function loadSidebarDirs(platform) {
     sidebarDirList.appendChild(btn);
   }
 }
+
+// ---- Albums ----
+let currentAlbumId = null;
+let albums = [];
+
+async function loadAlbums() {
+  albums = await window.player.getAlbums();
+  renderAlbums();
+}
+
+function renderAlbums() {
+  albumList.innerHTML = '';
+  if (albums.length === 0) {
+    albumSection.style.display = 'none';
+    return;
+  }
+  albumSection.style.display = '';
+  for (const album of albums) {
+    const btn = document.createElement('button');
+    btn.className = 'sidebar-dir-item' + (currentAlbumId === album.id ? ' active' : '');
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" opacity="0.4"/><circle cx="7" cy="7" r="2" fill="currentColor" opacity="0.5"/></svg>${album.name}<span class="count">${album.files.length}</span>`;
+    btn.title = `${album.name} (${album.files.length} files)`;
+    btn.addEventListener('click', () => openAlbum(album.id));
+    btn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showAlbumContextMenu(e, album);
+    });
+    albumList.appendChild(btn);
+  }
+}
+
+async function openAlbum(id) {
+  currentAlbumId = id;
+  const album = albums.find((a) => a.id === id);
+  if (!album) return;
+  setActiveSidebar(null);
+  viewMode = 'browse';
+  minimizePlayer();
+  fileBrowser.style.display = '';
+  recentView.style.display = 'none';
+  emptyState.style.display = 'none';
+  breadcrumb.innerHTML = `<span class="breadcrumb-item" data-path="">Home</span><span class="breadcrumb-sep">/</span><span class="breadcrumb-item">Albums</span><span class="breadcrumb-sep">/</span><span class="breadcrumb-item">${album.name}</span>`;
+  const entries = [];
+  for (const fp of album.files) {
+    try {
+      const info = await window.player.getFormatInfo(fp);
+      const name = fp.split(/[/\\]/).pop();
+      const ext = name.split('.').pop().toLowerCase();
+      entries.push({ name, path: fp, isDirectory: false, ext, type: info.type, size: 0 });
+    } catch {}
+  }
+  currentEntries = entries;
+  currentFilter = 'all';
+  updateFilterBar();
+  applyFilters();
+}
+
+function showAlbumContextMenu(e, album) {
+  const old = document.querySelector('.ctx-menu');
+  if (old) old.remove();
+  const menu = document.createElement('div');
+  menu.className = 'ctx-menu';
+  menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);`;
+  const renameBtn = document.createElement('button');
+  renameBtn.className = 'ctx-item';
+  renameBtn.textContent = 'Rename';
+  renameBtn.addEventListener('click', async () => {
+    menu.remove();
+    const name = prompt('Album name:', album.name);
+    if (name && name.trim()) {
+      albums = await window.player.renameAlbum({ id: album.id, name: name.trim() });
+      renderAlbums();
+    }
+  });
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'ctx-item';
+  deleteBtn.textContent = 'Delete';
+  deleteBtn.style.color = 'var(--error)';
+  deleteBtn.addEventListener('click', async () => {
+    menu.remove();
+    if (confirm(`Delete album "${album.name}"?`)) {
+      albums = await window.player.deleteAlbum(album.id);
+      if (currentAlbumId === album.id) { currentAlbumId = null; loadDirectory(currentPath || (await window.player.getHomeDir())); }
+      renderAlbums();
+    }
+  });
+  menu.appendChild(renameBtn);
+  menu.appendChild(deleteBtn);
+  document.body.appendChild(menu);
+  const close = (ev) => { if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', close); } };
+  setTimeout(() => document.addEventListener('click', close), 10);
+}
+
+if (createAlbumBtn) {
+  createAlbumBtn.addEventListener('click', async () => {
+    const name = prompt('New album name:');
+    if (name && name.trim()) {
+      albums = await window.player.createAlbum(name.trim());
+      renderAlbums();
+    }
+  });
+}
+
+// Add to album from file list (right-click)
+document.addEventListener('contextmenu', (e) => {
+  const fileItem = e.target.closest('.file-item, .grid-card');
+  if (!fileItem) return;
+  const filePath = fileItem.dataset.path;
+  if (!filePath) return;
+  if (albums.length === 0) return;
+  e.preventDefault();
+  const old = document.querySelector('.ctx-menu');
+  if (old) old.remove();
+  const menu = document.createElement('div');
+  menu.className = 'ctx-menu';
+  menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.4);`;
+  const header = document.createElement('div');
+  header.className = 'ctx-header';
+  header.textContent = 'Add to album…';
+  menu.appendChild(header);
+  for (const album of albums) {
+    const item = document.createElement('button');
+    item.className = 'ctx-item';
+    item.textContent = album.name;
+    item.addEventListener('click', async () => {
+      menu.remove();
+      albums = await window.player.addToAlbum({ id: album.id, filePaths: [filePath] });
+      renderAlbums();
+    });
+    menu.appendChild(item);
+  }
+  document.body.appendChild(menu);
+  const close = (ev) => { if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', close); } };
+  setTimeout(() => document.addEventListener('click', close), 10);
+});
 
 // ---- Directory loading ----
 async function loadDirectory(dirPath) {

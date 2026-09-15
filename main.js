@@ -477,3 +477,60 @@ ipcMain.handle('get-drives', () => {
   }
   return ['/'];
 });
+
+// ---- Albums / Playlists ----
+
+const ALBUMS_FILE = path.join(app.getPath('userData'), 'albums.json');
+
+function loadAlbums() {
+  try { return JSON.parse(fs.readFileSync(ALBUMS_FILE, 'utf-8')); } catch { return []; }
+}
+
+function saveAlbums(albums) {
+  fs.writeFileSync(ALBUMS_FILE, JSON.stringify(albums, null, 2));
+}
+
+ipcMain.handle('get-albums', () => loadAlbums());
+
+ipcMain.handle('create-album', (_event, name) => {
+  const albums = loadAlbums();
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  albums.push({ id, name, files: [], createdAt: Date.now() });
+  saveAlbums(albums);
+  return albums;
+});
+
+ipcMain.handle('rename-album', (_event, { id, name }) => {
+  const albums = loadAlbums();
+  const album = albums.find((a) => a.id === id);
+  if (album) album.name = name;
+  saveAlbums(albums);
+  return albums;
+});
+
+ipcMain.handle('delete-album', (_event, id) => {
+  let albums = loadAlbums();
+  albums = albums.filter((a) => a.id !== id);
+  saveAlbums(albums);
+  return albums;
+});
+
+ipcMain.handle('add-to-album', (_event, { id, filePaths }) => {
+  const albums = loadAlbums();
+  const album = albums.find((a) => a.id === id);
+  if (album) {
+    for (const fp of filePaths) {
+      if (!album.files.includes(fp)) album.files.push(fp);
+    }
+  }
+  saveAlbums(albums);
+  return albums;
+});
+
+ipcMain.handle('remove-from-album', (_event, { id, filePath }) => {
+  const albums = loadAlbums();
+  const album = albums.find((a) => a.id === id);
+  if (album) album.files = album.files.filter((f) => f !== filePath);
+  saveAlbums(albums);
+  return albums;
+});

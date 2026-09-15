@@ -919,8 +919,8 @@ body {
 .show-in-folder-btn {
   margin-left: auto;
   flex-shrink: 0;
-  width: 28px;
   height: 28px;
+  padding: 0 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -928,8 +928,11 @@ body {
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
   transition: all 0.15s;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .show-in-folder-btn:hover {
