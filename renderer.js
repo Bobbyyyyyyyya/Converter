@@ -542,8 +542,9 @@ function showResults(convertResults) {
         <span class="success"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3 7l2.5 2.5L11 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         <span>${name}</span>
         <span class="file-path">→ ${r.outputPath.split(/[\\/]/).pop()}</span>
-        <button class="show-in-folder-btn" data-path="${r.outputPath.replace(/"/g, '&quot;')}" title="Show in folder">
+        <button class="show-in-folder-btn" title="Show in folder">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 2.5h3l1.5 1.5h6.5v7h-11z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 8.5l2-2 2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Open
         </button>
       `;
       li.querySelector('.show-in-folder-btn').addEventListener('click', () => {

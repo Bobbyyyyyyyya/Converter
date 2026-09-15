@@ -12,5 +12,11 @@ contextBridge.exposeInMainWorld('player', {
   getFormatInfo: (filePath) => ipcRenderer.invoke('get-format-info', filePath),
   getAudioMetadata: (filePath) => ipcRenderer.invoke('get-audio-metadata', filePath),
   getPlatform: () => ipcRenderer.invoke('get-platform'),
+  getAlbums: () => ipcRenderer.invoke('get-albums'),
+  createAlbum: (name) => ipcRenderer.invoke('create-album', name),
+  renameAlbum: (data) => ipcRenderer.invoke('rename-album', data),
+  deleteAlbum: (id) => ipcRenderer.invoke('delete-album', id),
+  addToAlbum: (data) => ipcRenderer.invoke('add-to-album', data),
+  removeFromAlbum: (data) => ipcRenderer.invoke('remove-from-album', data),
   onOpenMediaFiles: (callback) => ipcRenderer.on('open-media-files', (_event, files) => callback(files)),
 });
