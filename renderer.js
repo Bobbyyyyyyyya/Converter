@@ -28,6 +28,7 @@ const checkUpdateBtn = document.getElementById('checkUpdateBtn');
 const versionDisplay = document.getElementById('versionDisplay');
 
 let selectedFiles = [];
+let currentCoverArt = null;
 let currentOutputDir = '';
 
 // ---- Version & Updates ----
@@ -439,7 +440,29 @@ function getTargetsForType(type) {
 function updateConvertButton() {
   const hasValidTarget = targetFormat.value && targetFormat.value !== '' && targetFormat.value !== '—';
   convertBtn.disabled = selectedFiles.length === 0 || !currentOutputDir || !hasValidTarget;
+  updateCoverArtVisibility();
 }
+
+const audioFormats = new Set(['mp3', 'aac', 'ogg', 'flac', 'm4a', 'wav', 'opus', 'aiff', 'ac3', 'mp2', 'alac']);
+const coverArtGroup = document.getElementById('coverArtGroup');
+const coverArtPathInput = document.getElementById('coverArtPath');
+const selectCoverArtBtn = document.getElementById('selectCoverArt');
+const clearCoverArtBtn = document.getElementById('clearCoverArt');
+
+function updateCoverArtVisibility() {
+  const isAudio = audioFormats.has(targetFormat.value);
+  coverArtGroup.style.display = isAudio ? '' : 'none';
+  if (!isAudio) { currentCoverArt = null; coverArtPathInput.value = ''; clearCoverArtBtn.style.display = 'none'; }
+}
+
+selectCoverArtBtn.addEventListener('click', async () => {
+  const p = await window.converter.selectCoverArt();
+  if (p) { currentCoverArt = p; coverArtPathInput.value = p.split(/[\\/]/).pop(); clearCoverArtBtn.style.display = ''; }
+});
+
+clearCoverArtBtn.addEventListener('click', () => {
+  currentCoverArt = null; coverArtPathInput.value = ''; clearCoverArtBtn.style.display = 'none';
+});
 
 // ---- Output Directory ----
 
@@ -464,6 +487,9 @@ function resetUI() {
   results.style.display = 'none';
   currentOutputDir = '';
   outputDir.value = '';
+  currentCoverArt = null;
+  coverArtPathInput.value = '';
+  clearCoverArtBtn.style.display = 'none';
   convertBtn.disabled = true;
 }
 
@@ -491,6 +517,7 @@ convertBtn.addEventListener('click', async () => {
     files,
     targetFormat: format,
     outputDir: currentOutputDir,
+    coverArt: currentCoverArt || undefined,
   });
 
   progressFill.style.width = '100%';
@@ -515,7 +542,13 @@ function showResults(convertResults) {
         <span class="success"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3 7l2.5 2.5L11 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         <span>${name}</span>
         <span class="file-path">→ ${r.outputPath.split(/[\\/]/).pop()}</span>
+        <button class="show-in-folder-btn" data-path="${r.outputPath.replace(/"/g, '&quot;')}" title="Show in folder">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 2.5h3l1.5 1.5h6.5v7h-11z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 8.5l2-2 2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 6.5v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
       `;
+      li.querySelector('.show-in-folder-btn').addEventListener('click', () => {
+        window.converter.showInFolder(r.outputPath);
+      });
     } else {
       li.innerHTML = `
         <span class="error"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M4 4l6 6M10 4L4 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>

@@ -35,6 +35,23 @@ function findSystemFfmpeg() {
   return null;
 }
 
+function extractAudioCoverArt(filePath) {
+  return new Promise((resolve) => {
+    const tmpOut = filePath + '.cover_extract.jpg';
+    ffmpeg(filePath)
+      .on('error', () => { try { fs.unlinkSync(tmpOut); } catch {} resolve(null); })
+      .on('end', () => {
+        try {
+          const buf = fs.readFileSync(tmpOut);
+          fs.unlinkSync(tmpOut);
+          resolve(buf);
+        } catch { resolve(null); }
+      })
+      .outputOptions(['-an', '-vcodec', 'mjpeg', '-frames:v', '1'])
+      .save(tmpOut);
+  });
+}
+
 const SUPPORTED = {
   image: [
     'jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'avif',
@@ -128,7 +145,7 @@ function getTargetsForType(type) {
   }
 }
 
-async function convertFile(inputPath, outputPath, targetFormat, onProgress) {
+async function convertFile(inputPath, outputPath, targetFormat, onProgress, coverArtPath) {
   const resolvedInput = path.resolve(inputPath);
   const resolvedOutput = path.resolve(outputPath);
   let useTmpOutput = false;
@@ -187,7 +204,9 @@ async function convertFile(inputPath, outputPath, targetFormat, onProgress) {
       await convertImage(inputPath, outputPath, targetFormat, onProgress);
     }
   } else if (type === 'audio' || type === 'video') {
-    await convertFFmpeg(inputPath, outputPath, targetFormat, onProgress);
+    const audioTargets = ['mp3', 'aac', 'ogg', 'flac', 'm4a', 'wav', 'opus', 'aiff', 'ac3', 'mp2', 'alac'];
+    const art = (type === 'audio' && audioTargets.includes(targetFormat)) ? coverArtPath : undefined;
+    await convertFFmpeg(inputPath, outputPath, targetFormat, onProgress, art);
   } else if (type === 'document') {
     // Expanded document handling: pdf, txt, html, md, csv, json, rtf, etc.
     const docTargets = ['pdf', 'txt', 'html', 'md', 'csv', 'json', 'rtf'];
@@ -389,9 +408,19 @@ async function convertImageToPdf(inputPath, outputPath, onProgress) {
   onProgress?.(100);
 }
 
-function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress) {
+function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress, coverArtPath) {
   return new Promise((resolve, reject) => {
     const command = ffmpeg(inputPath);
+
+    if (coverArtPath && fs.existsSync(coverArtPath)) {
+      command.input(coverArtPath);
+      command.outputOptions([
+        '-map', '0:a', '-map', '1:v',
+        '-codec', 'copy',
+        '-metadata:s:v:0', 'title=Album cover',
+        '-metadata:s:v:0', 'comment=Cover (front)',
+      ]);
+    }
 
     const audioCodecMap = {
       'mp3': 'libmp3lame',
@@ -1354,4 +1383,4 @@ async function convertAnimation(inputPath, outputPath, targetFormat, onProgress)
   }
 }
 
-module.exports = { convertFile, getFormatInfo };
+module.exports = { convertFile, getFormatInfo, extractAudioCoverArt };

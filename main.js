@@ -1,8 +1,8 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
-const { convertFile, getFormatInfo } = require('./converter');
+const { convertFile, getFormatInfo, extractAudioCoverArt } = require('./converter');
 
 let mainWindow;
 let playerWindow;
@@ -335,7 +335,7 @@ ipcMain.handle('get-format-info', async (_event, filePath) => {
   return getFormatInfo(filePath);
 });
 
-ipcMain.handle('convert', async (_event, { files, targetFormat, outputDir }) => {
+ipcMain.handle('convert', async (_event, { files, targetFormat, outputDir, coverArt }) => {
   const results = [];
   for (const file of files) {
     try {
@@ -348,7 +348,7 @@ ipcMain.handle('convert', async (_event, { files, targetFormat, outputDir }) => 
       const outputPath = path.join(outputDir, path.basename(file, path.extname(file)) + '.' + targetFormat);
       await convertFile(file, outputPath, targetFormat, (progress) => {
         mainWindow.webContents.send('convert-progress', { file, progress });
-      });
+      }, coverArt);
       results.push({ file, outputPath, success: true });
     } catch (err) {
       results.push({ file, error: err.message, success: false });
@@ -370,6 +370,28 @@ ipcMain.handle('get-app-version', () => {
 
 ipcMain.handle('get-platform', () => {
   return process.platform;
+});
+
+// ---- Shell IPC ----
+
+ipcMain.handle('show-in-folder', (_event, filePath) => {
+  shell.showItemInFolder(filePath);
+});
+
+ipcMain.handle('get-audio-metadata', async (_event, filePath) => {
+  try {
+    const coverArt = await extractAudioCoverArt(filePath);
+    return { coverArt: coverArt ? coverArt.toString('base64') : null };
+  } catch { return { coverArt: null }; }
+});
+
+ipcMain.handle('select-cover-art', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'bmp'] }],
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  return result.filePaths[0];
 });
 
 // ---- Player IPC ----

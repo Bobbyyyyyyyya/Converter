@@ -26,6 +26,8 @@ const playerStage = document.getElementById('playerStage');
 const playerStageArt = document.getElementById('playerStageArt');
 const artTitle = document.getElementById('artTitle');
 const artDetail = document.getElementById('artDetail');
+const artCover = document.getElementById('artCover');
+const artIcon = document.getElementById('artIcon');
 const playerControls = document.getElementById('playerControls');
 const playerVideo = document.getElementById('playerVideo');
 const playerImage = document.getElementById('playerImage');
@@ -686,6 +688,20 @@ async function loadMedia(filePath) {
     playerStageArt.style.display = isAudio ? 'flex' : 'none';
     artTitle.textContent = name;
     artDetail.textContent = isAudio ? 'Audio  •  ' + extUpper : '';
+    if (isAudio) {
+      artCover.style.display = 'none';
+      artIcon.style.display = '';
+      window.player.getAudioMetadata(filePath).then((meta) => {
+        if (meta && meta.coverArt) {
+          artCover.src = 'data:image/jpeg;base64,' + meta.coverArt;
+          artCover.style.display = 'block';
+          artIcon.style.display = 'none';
+        }
+      }).catch(() => {});
+    } else {
+      artCover.style.display = 'none';
+      artIcon.style.display = '';
+    }
     playerFilename.textContent = name;
     playerDetails.textContent = isVideo ? extUpper : 'Audio  •  ' + extUpper;
     if (playerThumb) playerThumb.innerHTML = isVideo ? '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="4" width="11" height="8" rx="1.4" stroke="white" stroke-width="1.4"/><path d="M6.8 7.2L10.8 9 6.8 10.8V7.2z" fill="white"/></svg>' : '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 11.8V4.8L12 3.6V11" stroke="white" stroke-width="1.4" stroke-linecap="round"/><circle cx="4" cy="11.8" r="1.6" stroke="white" stroke-width="1.3"/><circle cx="11" cy="11.2" r="1.6" stroke="white" stroke-width="1.3"/></svg>';

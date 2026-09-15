@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('converter', {
     ipcRenderer.on('update-status', (_event, data) => callback(data));
   },
   openPlayer: (files) => ipcRenderer.invoke('open-player', files),
+  showInFolder: (filePath) => ipcRenderer.invoke('show-in-folder', filePath),
+  getAudioMetadata: (filePath) => ipcRenderer.invoke('get-audio-metadata', filePath),
+  selectCoverArt: () => ipcRenderer.invoke('select-cover-art'),
   onOpenFile: (callback) => {
     ipcRenderer.on('open-files', (_event, files) => callback(files));
   },

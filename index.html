@@ -243,8 +243,16 @@
             <p>Converter v<span id="modalVersion">1.0.0</span> &mdash; Built with Electron, sharp, FFmpeg, assimp, LibreDWG WASM &amp; openskp</p>
           </section>
         </div>
-      </div>
-    </div>
+            </div>
+            <div class="control-group" id="coverArtGroup" style="display:none">
+              <label>Album cover (optional)</label>
+              <div class="input-row">
+                <input type="text" id="coverArtPath" readonly placeholder="Select cover image..." />
+                <button id="selectCoverArt" class="btn btn-ghost">Browse</button>
+                <button id="clearCoverArt" class="btn btn-ghost" style="display:none" title="Remove cover">✕</button>
+              </div>
+            </div>
+          </div>
   </div>
 
   <script src="renderer.js"></script>
