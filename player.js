@@ -60,6 +60,7 @@ const sidebarMusic = document.getElementById('sidebarMusic');
 const sidebarVideo = document.getElementById('sidebarVideo');
 const sidebarImage = document.getElementById('sidebarImage');
 const sidebarOpenFile = document.getElementById('sidebarOpenFile');
+const sidebarBrowseFolder = document.getElementById('sidebarBrowseFolder');
 const clearRecentBtn = document.getElementById('clearRecentBtn');
 
 const searchInput = document.getElementById('searchInput');
@@ -165,6 +166,21 @@ sidebarOpenFile.addEventListener('click', async () => {
     loadMedia(files[0]);
   }
 });
+
+if (sidebarBrowseFolder) {
+  sidebarBrowseFolder.addEventListener('click', async () => {
+    const dir = await window.player.selectDirectory();
+    if (dir) {
+      setActiveSidebar(null);
+      viewMode = 'browse';
+      currentFilter = 'all';
+      updateFilterBar();
+      minimizePlayer();
+      currentPath = dir;
+      loadDirectory(dir);
+    }
+  });
+}
 
 function setActiveSidebar(el) {
   document.querySelectorAll('.sidebar-item').forEach((e) => e.classList.remove('active'));

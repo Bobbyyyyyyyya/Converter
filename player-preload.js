@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('player', {
   clearRecent: () => ipcRenderer.invoke('clear-recent'),
   getDrives: () => ipcRenderer.invoke('get-drives'),
   selectFiles: () => ipcRenderer.invoke('select-files'),
+  selectDirectory: () => ipcRenderer.invoke('select-output-dir'),
   getFormatInfo: (filePath) => ipcRenderer.invoke('get-format-info', filePath),
   getAudioMetadata: (filePath) => ipcRenderer.invoke('get-audio-metadata', filePath),
   getPlatform: () => ipcRenderer.invoke('get-platform'),
