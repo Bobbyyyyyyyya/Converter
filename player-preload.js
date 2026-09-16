@@ -1,6 +1,9 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('player', {
+  getPathForFile: (file) => {
+    try { return webUtils.getPathForFile(file); } catch { return file?.name || ''; }
+  },
   readDirectory: (dirPath) => ipcRenderer.invoke('read-directory', dirPath),
   getHomeDir: () => ipcRenderer.invoke('get-home-dir'),
   getRecentFiles: () => ipcRenderer.invoke('get-recent-files'),

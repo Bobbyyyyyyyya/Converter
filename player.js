@@ -93,7 +93,7 @@ document.addEventListener('drop', async (e) => {
   const paths = [];
   if (e.dataTransfer.files && e.dataTransfer.files.length) {
     for (const f of e.dataTransfer.files) {
-      const p = f.path || f.name;
+      const p = window.player.getPathForFile(f);
       if (p) paths.push(p);
     }
   }
