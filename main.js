@@ -90,6 +90,7 @@ function openPlayerWindow() {
     minWidth: 800,
     minHeight: 500,
     title: 'Media Player',
+    backgroundColor: '#0f0f13',
     webPreferences: {
       preload: path.join(__dirname, 'player-preload.js'),
       contextIsolation: true,

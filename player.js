@@ -33,6 +33,7 @@ const playerVideo = document.getElementById('playerVideo');
 const playerImage = document.getElementById('playerImage');
 const playerFilename = document.getElementById('playerFilename');
 const playerDetails = document.getElementById('playerDetails');
+const playerLocation = document.getElementById('playerLocation');
 const playerThumb = document.getElementById('playerThumb');
 const stageBg = document.getElementById('stageBg');
 
@@ -319,11 +320,14 @@ async function loadAlbums() {
 
 function renderAlbums() {
   albumList.innerHTML = '';
+  const hint = document.createElement('div');
+  hint.className = 'sidebar-hint';
+  hint.id = 'albumHint';
   if (albums.length === 0) {
-    albumSection.style.display = 'none';
+    hint.textContent = 'No albums yet — click + to create';
+    albumList.appendChild(hint);
     return;
   }
-  albumSection.style.display = '';
   for (const album of albums) {
     const btn = document.createElement('button');
     btn.className = 'sidebar-dir-item' + (currentAlbumId === album.id ? ' active' : '');
@@ -827,6 +831,7 @@ async function loadMedia(filePath) {
     playerStageArt.style.display = 'none';
     playerFilename.textContent = name;
     playerDetails.textContent = `${isGif ? 'GIF' : 'Image'} • ${extUpper}`;
+    playerLocation.textContent = filePath;
     if (playerThumb) { playerThumb.innerHTML = isGif ? '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.2" y="4" width="11.6" height="8" rx="1.2" stroke="white" stroke-width="1.4"/><path d="M4 6.5h2.2M4 9h2.2M4 11.5h2.2M8.2 6.5v5M9.8 6.5l1.6 5M11.4 6.5v5" stroke="white" stroke-width="1.1" stroke-linecap="round"/></svg>' : '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.2" y="3" width="11.6" height="9.5" rx="1.3" stroke="white" stroke-width="1.4"/><circle cx="6" cy="7" r="1.3" stroke="white" stroke-width="1.2"/><path d="M2.8 10.8L5 8.4l2.4 2.4 1.8-1.6 3 2.3" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>'; playerThumb.style.background = isGif ? 'linear-gradient(135deg, #ec4899, #8b5cf6)' : 'linear-gradient(135deg, #22c55e, #06b6d4)'; }
     playerControls.style.display = 'flex';
     // Hide progress for images, show only navigation
@@ -859,6 +864,7 @@ async function loadMedia(filePath) {
     }
     playerFilename.textContent = name;
     playerDetails.textContent = isVideo ? extUpper : 'Audio  •  ' + extUpper;
+    playerLocation.textContent = filePath;
     if (playerThumb) playerThumb.innerHTML = isVideo ? '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="4" width="11" height="8" rx="1.4" stroke="white" stroke-width="1.4"/><path d="M6.8 7.2L10.8 9 6.8 10.8V7.2z" fill="white"/></svg>' : '<svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 11.8V4.8L12 3.6V11" stroke="white" stroke-width="1.4" stroke-linecap="round"/><circle cx="4" cy="11.8" r="1.6" stroke="white" stroke-width="1.3"/><circle cx="11" cy="11.2" r="1.6" stroke="white" stroke-width="1.3"/></svg>';
     playerProgressBg.parentElement.style.opacity = '1';
     playerProgressBg.parentElement.style.pointerEvents = 'auto';

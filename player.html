@@ -52,18 +52,20 @@
         </button>
       </div>
       <div class="sidebar-section sidebar-section-grow">
-        <div class="sidebar-label">Folders
-          <button class="sidebar-label-btn" id="createAlbumBtn" title="New album">+</button>
-        </div>
+        <div class="sidebar-label">Folders</div>
         <div class="sidebar-dir-list" id="sidebarDirList"></div>
         <button class="sidebar-item" id="sidebarBrowseFolder" style="margin-top:4px">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h5l2 2h5v7H2V4z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 9l2-2 2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Browse folder…
         </button>
       </div>
-      <div class="sidebar-section" id="albumSection" style="display:none">
-        <div class="sidebar-label">Albums</div>
-        <div class="sidebar-dir-list" id="albumList"></div>
+      <div class="sidebar-section" id="albumSection">
+        <div class="sidebar-label">Albums
+          <button class="sidebar-label-btn" id="createAlbumBtn" title="New album">+</button>
+        </div>
+        <div class="sidebar-dir-list" id="albumList">
+          <div class="sidebar-hint" id="albumHint">No albums yet — click + to create</div>
+        </div>
       </div>
       <div class="sidebar-footer">
         <button class="sidebar-item sidebar-item-cta" id="sidebarOpenFile">
@@ -183,6 +185,7 @@
           <div class="player-text">
             <div class="player-filename" id="playerFilename">No file loaded</div>
             <div class="player-details" id="playerDetails"></div>
+            <div class="player-location" id="playerLocation"></div>
           </div>
         </div>
         <button id="playerCloseBtn" class="pbtn pbtn-close" title="Close (Esc)">

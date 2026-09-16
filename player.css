@@ -393,6 +393,7 @@ body::before {
 }
 .player-filename:hover { color: var(--accent-hover); }
 .player-details { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player-location { font-size: 10px; color: var(--text-muted); opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
 .player-progress { padding: 2px 0; cursor: pointer; }
 .player-progress-bg {
   position: relative; height: 4px; background: rgba(255,255,255,0.08);
