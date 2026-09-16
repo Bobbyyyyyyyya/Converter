@@ -1,8 +1,12 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('player', {
-  getPathForFile: (file) => {
-    try { return webUtils.getPathForFile(file); } catch { return file?.name || ''; }
+getPathForFile: (file) => {
+    try {
+      return file.path || webUtils.getPathForFile(file) || '';
+    } catch {
+      return file?.path || '';
+    }
   },
   readDirectory: (dirPath) => ipcRenderer.invoke('read-directory', dirPath),
   getHomeDir: () => ipcRenderer.invoke('get-home-dir'),
@@ -13,6 +17,7 @@ contextBridge.exposeInMainWorld('player', {
   selectFiles: () => ipcRenderer.invoke('select-files'),
   selectDirectory: () => ipcRenderer.invoke('select-output-dir'),
   getFormatInfo: (filePath) => ipcRenderer.invoke('get-format-info', filePath),
+  getFileSize: (filePath) => ipcRenderer.invoke('get-file-size', filePath),
   getAudioMetadata: (filePath) => ipcRenderer.invoke('get-audio-metadata', filePath),
   getPlatform: () => ipcRenderer.invoke('get-platform'),
   getAlbums: () => ipcRenderer.invoke('get-albums'),

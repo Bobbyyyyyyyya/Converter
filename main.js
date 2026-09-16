@@ -336,6 +336,15 @@ ipcMain.handle('get-format-info', async (_event, filePath) => {
   return getFormatInfo(filePath);
 });
 
+ipcMain.handle('get-file-size', async (_event, filePath) => {
+  try {
+    const stat = fs.statSync(filePath);
+    return stat.size;
+  } catch {
+    return 0;
+  }
+});
+
 ipcMain.handle('convert', async (_event, { files, targetFormat, outputDir, coverArt }) => {
   const results = [];
   for (const file of files) {

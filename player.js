@@ -94,7 +94,7 @@ document.addEventListener('drop', async (e) => {
   if (e.dataTransfer.files && e.dataTransfer.files.length) {
     for (const f of e.dataTransfer.files) {
       const p = window.player.getPathForFile(f);
-      if (p) paths.push(p);
+      if (p && (p.includes('/') || p.includes('\\'))) paths.push(p);
     }
   }
   if (!paths.length) return;
@@ -514,7 +514,9 @@ async function openAlbum(id) {
       const info = await window.player.getFormatInfo(fp);
       const name = fp.split(/[/\\]/).pop();
       const ext = name.split('.').pop().toLowerCase();
-      entries.push({ name, path: fp, isDirectory: false, ext, type: info.type, size: 0 });
+      let size = 0;
+      try { size = await window.player.getFileSize(fp); } catch {}
+      entries.push({ name, path: fp, isDirectory: false, ext, type: info.type, size });
     } catch {}
   }
   currentEntries = entries;
