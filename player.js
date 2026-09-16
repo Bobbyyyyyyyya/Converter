@@ -84,6 +84,47 @@ const viewToggle = document.getElementById('viewToggle');
   loadAlbums();
 })();
 
+// ---- Drag & drop folders onto player ----
+document.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+document.addEventListener('dragleave', (e) => { if (e.relatedTarget === null) clearDragHighlight(); });
+document.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  clearDragHighlight();
+  const paths = [];
+  if (e.dataTransfer.files && e.dataTransfer.files.length) {
+    for (const f of e.dataTransfer.files) {
+      const p = f.path || f.name;
+      if (p) paths.push(p);
+    }
+  }
+  if (!paths.length) return;
+  for (const p of paths) {
+    const res = await window.player.readDirectory(p);
+    if (res.success) {
+      setActiveSidebar(null);
+      viewMode = 'browse';
+      currentFilter = 'all';
+      updateFilterBar();
+      minimizePlayer();
+      currentPath = p;
+      loadDirectory(p);
+      return;
+    }
+  }
+  const mediaFiles = paths.filter((p) => {
+    const ext = p.split('.').pop().toLowerCase();
+    return ['mp3','wav','flac','aac','m4a','ogg','opus','aiff','wma','mka','wv',
+      'mp4','mov','avi','mkv','webm','wmv','flv','3gp','m2ts',
+      'jpg','jpeg','png','gif','webp','bmp','avif','heic','heif','svg','psd','ico','hdr'].includes(ext);
+  });
+  if (mediaFiles.length) {
+    playlist = mediaFiles;
+    playlistIndex = 0;
+    loadMedia(mediaFiles[0]);
+  }
+});
+function clearDragHighlight() { document.body.classList.remove('drag-over'); }
+
 window.player.onOpenMediaFiles((files) => {
   if (files.length > 0) {
     playlist = files;
@@ -96,8 +137,8 @@ window.player.onOpenMediaFiles((files) => {
 function minimizePlayer() {
   playerStage.style.display = 'none';
   fileBrowser.style.display = '';
+  recentView.style.display = 'none';
   emptyState.style.display = 'none';
-  if (viewMode === 'recent') recentView.style.display = '';
 }
 
 function restorePlayer() {
@@ -140,7 +181,10 @@ sidebarMusic.addEventListener('click', () => {
   currentFilter = 'audio';
   updateFilterBar();
   minimizePlayer();
-  applyFilters();
+  window.player.getHomeDir().then((home) => {
+    currentPath = home;
+    loadDirectory(home);
+  });
 });
 
 sidebarVideo.addEventListener('click', () => {
@@ -149,7 +193,10 @@ sidebarVideo.addEventListener('click', () => {
   currentFilter = 'video';
   updateFilterBar();
   minimizePlayer();
-  applyFilters();
+  window.player.getHomeDir().then((home) => {
+    currentPath = home;
+    loadDirectory(home);
+  });
 });
 
 if (sidebarImage) {
@@ -159,7 +206,10 @@ if (sidebarImage) {
     currentFilter = 'image';
     updateFilterBar();
     minimizePlayer();
-    applyFilters();
+    window.player.getHomeDir().then((home) => {
+      currentPath = home;
+      loadDirectory(home);
+    });
   });
 }
 
