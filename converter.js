@@ -412,17 +412,7 @@ function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress, coverArt
   return new Promise((resolve, reject) => {
     const command = ffmpeg(inputPath);
 
-    if (coverArtPath && fs.existsSync(coverArtPath)) {
-      command.input(coverArtPath);
-      command.outputOptions([
-        '-map', '0:a', '-map', '1:v',
-        '-codec', 'copy',
-        '-metadata:s:v:0', 'title=Album cover',
-        '-metadata:s:v:0', 'comment=Cover (front)',
-      ]);
-    }
-
-    const audioCodecMap = {
+const audioCodecMap = {
       'mp3': 'libmp3lame',
       'aac': 'aac',
       'ogg': 'vorbis',
@@ -435,6 +425,33 @@ function convertFFmpeg(inputPath, outputPath, targetFormat, onProgress, coverArt
       'mp2': 'mp2',
       'alac': 'alac',
     };
+
+    // Formats that can hold embedded cover art. wav/aiff/ac3/mp2 cannot - skip cover there.
+    const coverCapable = ['mp3', 'aac', 'ogg', 'flac', 'm4a', 'opus', 'alac'];
+
+    if (coverArtPath && fs.existsSync(coverArtPath) && coverCapable.includes(targetFormat)) {
+      // aac is an ADTS/RAW stream unless muxed - treat like mp3 family with copy cover
+      const m4aStyle = (targetFormat === 'm4a' || targetFormat === 'alac');
+      command.input(coverArtPath);
+      if (m4aStyle) {
+        // m4a/mp4 container: cover MUST be re-encoded to MJPEG and flagged attached_pic
+        command.outputOptions([
+          '-map', '0:a', '-map', '1:v',
+          '-c:v', 'mjpeg', '-q:v', '3',
+          '-disposition:v', 'attached_pic',
+          '-metadata:s:v', 'title=Album cover',
+          '-metadata:s:v', 'comment=Cover (front)',
+        ]);
+      } else {
+        command.outputOptions([
+          '-map', '0:a', '-map', '1:v',
+          '-c:v', 'copy',
+          '-disposition:v', 'attached_pic',
+          '-metadata:s:v', 'title=Album cover',
+          '-metadata:s:v', 'comment=Cover (front)',
+        ]);
+      }
+    }
 
     const videoCodecMap = {
       'mp4': 'libx264',
