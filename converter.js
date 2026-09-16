@@ -426,8 +426,9 @@ const audioCodecMap = {
       'alac': 'alac',
     };
 
-    // Formats that can hold embedded cover art. wav/aiff/ac3/mp2 cannot - skip cover there.
-    const coverCapable = ['mp3', 'aac', 'ogg', 'flac', 'm4a', 'opus', 'alac'];
+    // Formats that can hold embedded cover art. wav/aiff/ac3/mp2 cannot (raw streams), and
+    // aac/ogg/opus muxers (adts/ogg) reject an attached picture stream - skip cover there too.
+    const coverCapable = ['mp3', 'flac', 'm4a', 'alac'];
 
     if (coverArtPath && fs.existsSync(coverArtPath) && coverCapable.includes(targetFormat)) {
       // aac is an ADTS/RAW stream unless muxed - treat like mp3 family with copy cover
@@ -496,8 +497,25 @@ const audioCodecMap = {
     const audioCodec = audioCodecMap[targetFormat];
     const videoCodec = videoCodecMap[targetFormat];
 
+    const audioMuxerMap = {
+      'mp3': 'mp3',
+      'aac': 'adts',
+      'ogg': 'ogg',
+      'flac': 'flac',
+      'm4a': 'ipod',
+      'wav': 'wav',
+      'opus': 'opus',
+      'aiff': 'aiff',
+      'ac3': 'ac3',
+      'mp2': 'mp2',
+      'alac': 'ipod',
+    };
+
     if (videoFormats.includes(targetFormat)) {
       command.toFormat(targetFormat);
+    }
+    if (audioMuxerMap[targetFormat]) {
+      command.toFormat(audioMuxerMap[targetFormat]);
     }
 
     if (audioCodec) command.audioCodec(audioCodec);
