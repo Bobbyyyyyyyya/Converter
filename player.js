@@ -118,9 +118,25 @@ document.addEventListener('drop', async (e) => {
       'jpg','jpeg','png','gif','webp','bmp','avif','heic','heif','svg','psd','ico','hdr'].includes(ext);
   });
   if (mediaFiles.length) {
-    playlist = mediaFiles;
-    playlistIndex = 0;
-    loadMedia(mediaFiles[0]);
+    if (albums.length === 1) {
+      albums = await window.player.addToAlbum({ id: albums[0].id, filePaths: mediaFiles });
+      renderAlbums();
+    } else if (albums.length > 1) {
+      const chosen = await showAlbumPicker('Add to album…');
+      if (chosen) {
+        albums = await window.player.addToAlbum({ id: chosen.id, filePaths: mediaFiles });
+        renderAlbums();
+      }
+    } else {
+      const name = await showPrompt('New album name:');
+      if (name && name.trim()) {
+        albums = await window.player.createAlbum(name.trim());
+        if (albums.length) {
+          albums = await window.player.addToAlbum({ id: albums[0].id, filePaths: mediaFiles });
+        }
+        renderAlbums();
+      }
+    }
   }
 });
 function clearDragHighlight() { document.body.classList.remove('drag-over'); }
@@ -422,6 +438,32 @@ function showConfirm(title) {
     btnRow.appendChild(cancelBtn);
     btnRow.appendChild(okBtn);
     modal.appendChild(btnRow);
+    document.body.appendChild(overlay);
+  });
+}
+
+function showAlbumPicker(title) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    const modal = document.createElement('div');
+    modal.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;min-width:280px;max-width:340px;box-shadow:0 16px 48px rgba(0,0,0,0.5);';
+    modal.innerHTML = `<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px">${title}</div>`;
+    for (const album of albums) {
+      const btn = document.createElement('button');
+      btn.style.cssText = 'width:100%;text-align:left;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:14px;font-family:inherit;margin-bottom:6px;';
+      btn.textContent = album.name;
+      btn.addEventListener('mouseenter', () => { btn.style.borderColor = 'var(--accent)'; });
+      btn.addEventListener('mouseleave', () => { btn.style.borderColor = 'var(--border)'; });
+      btn.addEventListener('click', () => { overlay.remove(); resolve(album); });
+      modal.appendChild(btn);
+    }
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:13px;font-family:inherit;margin-top:4px;';
+    cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null); });
+    modal.appendChild(cancelBtn);
+    overlay.appendChild(modal);
     document.body.appendChild(overlay);
   });
 }
