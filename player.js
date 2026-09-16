@@ -313,6 +313,69 @@ async function loadSidebarDirs(platform) {
 let currentAlbumId = null;
 let albums = [];
 
+function showPrompt(title, defaultValue) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    const modal = document.createElement('div');
+    modal.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;min-width:320px;box-shadow:0 16px 48px rgba(0,0,0,0.5);';
+    modal.innerHTML = `<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px">${title}</div>`;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = defaultValue || '';
+    input.style.cssText = 'width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:16px;';
+    input.addEventListener('focus', () => { input.style.borderColor = 'var(--accent)'; });
+    input.addEventListener('blur', () => { input.style.borderColor = 'var(--border)'; });
+    modal.appendChild(input);
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:13px;font-family:inherit;';
+    const okBtn = document.createElement('button');
+    okBtn.textContent = 'OK';
+    okBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:white;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;';
+    const submit = () => { overlay.remove(); resolve(input.value); };
+    const close = () => { overlay.remove(); resolve(null); };
+    okBtn.addEventListener('click', submit);
+    cancelBtn.addEventListener('click', close);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') close(); });
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(okBtn);
+    modal.appendChild(btnRow);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    input.focus();
+    input.select();
+  });
+}
+
+function showConfirm(title) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    const modal = document.createElement('div');
+    modal.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;min-width:320px;box-shadow:0 16px 48px rgba(0,0,0,0.5);';
+    modal.innerHTML = `<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px">${title}</div>`;
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:13px;font-family:inherit;';
+    const okBtn = document.createElement('button');
+    okBtn.textContent = 'Delete';
+    okBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:#ef4444;color:white;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;';
+    const submit = () => { overlay.remove(); resolve(true); };
+    const close = () => { overlay.remove(); resolve(false); };
+    okBtn.addEventListener('click', submit);
+    cancelBtn.addEventListener('click', close);
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(okBtn);
+    modal.appendChild(btnRow);
+    document.body.appendChild(overlay);
+  });
+}
+
 async function loadAlbums() {
   albums = await window.player.getAlbums();
   renderAlbums();
@@ -379,7 +442,7 @@ function showAlbumContextMenu(e, album) {
   renameBtn.textContent = 'Rename';
   renameBtn.addEventListener('click', async () => {
     menu.remove();
-    const name = prompt('Album name:', album.name);
+    const name = await showPrompt('Rename album:', album.name);
     if (name && name.trim()) {
       albums = await window.player.renameAlbum({ id: album.id, name: name.trim() });
       renderAlbums();
@@ -391,7 +454,7 @@ function showAlbumContextMenu(e, album) {
   deleteBtn.style.color = 'var(--error)';
   deleteBtn.addEventListener('click', async () => {
     menu.remove();
-    if (confirm(`Delete album "${album.name}"?`)) {
+    if (await showConfirm(`Delete album "${album.name}"?`)) {
       albums = await window.player.deleteAlbum(album.id);
       if (currentAlbumId === album.id) { currentAlbumId = null; loadDirectory(currentPath || (await window.player.getHomeDir())); }
       renderAlbums();
@@ -406,7 +469,7 @@ function showAlbumContextMenu(e, album) {
 
 if (createAlbumBtn) {
   createAlbumBtn.addEventListener('click', async () => {
-    const name = prompt('New album name:');
+    const name = await showPrompt('New album name:');
     if (name && name.trim()) {
       albums = await window.player.createAlbum(name.trim());
       renderAlbums();
