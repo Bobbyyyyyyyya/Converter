@@ -434,8 +434,9 @@ const audioCodecMap = {
       const m4aStyle = (targetFormat === 'm4a' || targetFormat === 'alac');
       command.input(coverArtPath);
       if (m4aStyle) {
-        // m4a/mp4 container: cover MUST be re-encoded to MJPEG and flagged attached_pic
-        command.outputOptions([
+        // m4a/mp4 container: cover MUST be re-encoded to MJPEG and flagged attached_pic.
+        // Spread args so fluent-ffmpeg keeps values with spaces intact (doSplit=false).
+        command.outputOptions(...[
           '-map', '0:a', '-map', '1:v',
           '-c:v', 'mjpeg', '-q:v', '3',
           '-disposition:v', 'attached_pic',
@@ -443,7 +444,7 @@ const audioCodecMap = {
           '-metadata:s:v', 'comment=Cover (front)',
         ]);
       } else {
-        command.outputOptions([
+        command.outputOptions(...[
           '-map', '0:a', '-map', '1:v',
           '-c:v', 'copy',
           '-disposition:v', 'attached_pic',
