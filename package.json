@@ -323,12 +323,12 @@
     "openskp": "^1.1.0",
     "pdfjs-dist": "^6.1.200",
     "pdfkit": "^0.19.1",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "tar": "^7.5.22"
   },
   "devDependencies": {
     "@electron/osx-sign": "^2.5.0",
-    "electron": "^43.5.0",
+    "electron": "^43.8.1",
     "electron-builder": "^26.15.3"
   },
   "allowScripts": {
