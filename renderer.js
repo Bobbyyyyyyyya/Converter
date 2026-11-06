@@ -208,11 +208,53 @@ dropZone.addEventListener('dragleave', () => {
   dropZone.classList.remove('drag-over');
 });
 
-dropZone.addEventListener('drop', async (e) => {
+dropZone.addEventListener('mousemove', (e) => {
+  const rect = dropZone.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  dropZone.style.setProperty('--mouse-x', x + '%');
+  dropZone.style.setProperty('--mouse-y', y + '%');
+});
+
+// ---- Global drag & drop (drop anywhere on the home screen) ----
+
+function isFileDrag(e) {
+  const types = e.dataTransfer && e.dataTransfer.types;
+  return !!types && Array.from(types).includes('Files');
+}
+
+let fileDragDepth = 0;
+
+document.addEventListener('dragenter', (e) => {
+  if (!isFileDrag(e)) return;
   e.preventDefault();
-  dropZone.classList.remove('drag-over');
+  fileDragDepth++;
+  document.body.classList.add('dragging-files');
+});
+
+document.addEventListener('dragover', (e) => {
+  if (!isFileDrag(e)) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+});
+
+document.addEventListener('dragleave', (e) => {
+  if (!isFileDrag(e)) return;
+  fileDragDepth = Math.max(0, fileDragDepth - 1);
+  if (fileDragDepth === 0) document.body.classList.remove('dragging-files');
+});
+
+document.addEventListener('drop', async (e) => {
+  if (!isFileDrag(e)) return;
+  e.preventDefault();
+  fileDragDepth = 0;
+  document.body.classList.remove('dragging-files');
+  await handleDroppedFiles(e.dataTransfer);
+});
+
+async function handleDroppedFiles(dataTransfer) {
   // Pad ophalen via preload (webUtils.getPathForFile); File.path bestaat niet meer in nieuwe Electron-versies
-  const files = Array.from(e.dataTransfer.files);
+  const files = Array.from(dataTransfer.files || []);
   const paths = [];
   const noPathNames = [];
   for (const f of files) {
@@ -241,15 +283,7 @@ dropZone.addEventListener('drop', async (e) => {
     }
   }
   if (paths.length) addFiles(paths);
-});
-
-dropZone.addEventListener('mousemove', (e) => {
-  const rect = dropZone.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 100;
-  const y = ((e.clientY - rect.top) / rect.height) * 100;
-  dropZone.style.setProperty('--mouse-x', x + '%');
-  dropZone.style.setProperty('--mouse-y', y + '%');
-});
+}
 
 window.converter.onOpenFile((files) => {
   if (files.length) addFiles(files, true);
